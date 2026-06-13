@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SLR Tennis Academy — سیستم مدیریت</title>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --clay:#c4622d;--clay2:#e07a45;--clay3:#f0956a;
+  --green:#2d6a1f;--green2:#3d8c2a;--green3:#5dbc40;
+  --dark:#1a0d06;--dark2:#2a1509;
+  --cream:#f5efe6;--gray:#8a7a6e;--lightgray:#e8e0d8;
+  --white:#fff;--gold:#e8c14a;
+  --shadow:0 4px 24px rgba(26,13,6,.15);
+  --radius:10px;
+}
+body{font-family:'Vazirmatn',sans-serif;background:#f0ece3;color:#2a1509;min-height:100vh;}
+
+/* ── APP SHELL ── */
+#app{display:none;}
+#loginScreen{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#1a0d06 0%,#3d1a0a 50%,#1a2d10 100%);
+  padding:1rem;
+}
+
+/* ── LOGIN ── */
+.login-card{
+  background:rgba(245,239,230,.97);border-radius:20px;
+  padding:2.5rem;width:100%;max-width:400px;
+  box-shadow:0 30px 80px rgba(0,0,0,.5);
+}
+.login-logo{text-align:center;margin-bottom:2rem;}
+.login-logo .ico{font-size:3rem;display:block;margin-bottom:.5rem;}
+.login-logo h1{font-size:1.5rem;font-weight:800;color:var(--dark);letter-spacing:1px;}
+.login-logo p{font-size:.8rem;color:var(--gray);margin-top:.2rem;}
+.lform-group{margin-bottom:1.2rem;}
+.lform-group label{display:block;font-size:.75rem;font-weight:700;color:var(--gray);letter-spacing:1px;text-transform:uppercase;margin-bottom:.5rem;}
+.lform-group input,.lform-group select{
+  width:100%;padding:.8rem 1rem;border:1.5px solid var(--lightgray);
+  border-radius:8px;font-size:.9rem;font-family:'Vazirmatn',sans-serif;
+  background:var(--white);outline:none;transition:border-color .3s;direction:rtl;
+}
+.lform-group input:focus,.lform-group select:focus{border-color:var(--clay2);}
+.login-btn{
+  width:100%;background:var(--clay2);color:var(--white);
+  border:none;border-radius:8px;padding:.9rem;
+  font-family:'Vazirmatn',sans-serif;font-size:1rem;font-weight:700;
+  cursor:pointer;transition:all .3s;margin-top:.5rem;
+}
+.login-btn:hover{background:var(--clay);transform:translateY(-2px);}
+.login-err{color:#c0392b;font-size:.8rem;text-align:center;margin-top:.8rem;display:none;}
+.login-tabs{display:flex;gap:.5rem;margin-bottom:1.5rem;background:var(--lightgray);border-radius:8px;padding:.3rem;}
+.ltab{flex:1;padding:.5rem;border:none;border-radius:6px;font-family:'Vazirmatn',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;background:transparent;color:var(--gray);transition:all .3s;}
+.ltab.a{background:var(--white);color:var(--clay);box-shadow:0 2px 8px rgba(0,0,0,.1);}
+
+/* ── TOPBAR ── */
+.topbar{
+  background:var(--dark);color:var(--cream);
+  padding:.8rem 1.5rem;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:50;
+  box-shadow:0 2px 12px rgba(0,0,0,.3);
+}
+.topbar-logo{font-size:1rem;font-weight:800;letter-spacing:2px;display:flex;align-items:center;gap:.5rem;}
+.topbar-logo .dot{width:8px;height:8px;border-radius:50%;background:var(--clay2);}
+.topbar-user{display:flex;align-items:center;gap:1rem;}
+.topbar-name{font-size:.8rem;color:rgba(245,239,230,.6);}
+.topbar-role{font-size:.65rem;background:rgba(196,98,45,.25);color:var(--clay3);border:1px solid rgba(196,98,45,.3);padding:.2rem .6rem;border-radius:20px;letter-spacing:1px;}
+.logout-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:rgba(245,239,230,.7);padding:.35rem .8rem;border-radius:5px;font-size:.72rem;cursor:pointer;font-family:'Vazirmatn',sans-serif;transition:all .3s;}
+.logout-btn:hover{background:rgba(196,98,45,.2);color:var(--cream);}
+
+/* ── NAV TABS ── */
+.nav-tabs{
+  background:var(--white);border-bottom:2px solid var(--lightgray);
+  display:flex;overflow-x:auto;padding:0 1.5rem;
+  scrollbar-width:none;
+}
+.nav-tabs::-webkit-scrollbar{display:none;}
+.ntab{
+  padding:.9rem 1.4rem;border:none;background:none;
+  font-family:'Vazirmatn',sans-serif;font-size:.83rem;font-weight:600;
+  color:var(--gray);cursor:pointer;white-space:nowrap;
+  border-bottom:2.5px solid transparent;margin-bottom:-2px;transition:all .25s;
+}
+.ntab.a{color:var(--clay);border-bottom-color:var(--clay);}
+.ntab:hover{color:var(--clay2);}
+
+/* ── MAIN ── */
+.main{padding:1.5rem;max-width:1100px;margin:0 auto;}
+
+/* ── CARDS ── */
+.card{background:var(--white);border-radius:var(--radius);padding:1.5rem;box-shadow:var(--shadow);margin-bottom:1.5rem;}
+.card-title{font-size:1rem;font-weight:800;color:var(--dark);margin-bottom:1.2rem;display:flex;align-items:center;gap:.5rem;}
+.card-title .ico{font-size:1.2rem;}
+
+/* ── FORM ELEMENTS ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+.form-group{margin-bottom:1rem;}
+.form-group label{display:block;font-size:.75rem;font-weight:700;color:var(--gray);letter-spacing:.5px;margin-bottom:.4rem;}
+.form-group input,.form-group select,.form-group textarea{
+  width:100%;padding:.7rem 1rem;border:1.5px solid var(--lightgray);
+  border-radius:7px;font-size:.88rem;font-family:'Vazirmatn',sans-serif;
+  background:var(--white);outline:none;transition:all .3s;direction:rtl;
+}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--clay2);background:#fffaf7;}
+.form-group textarea{resize:vertical;min-height:70px;line-height:1.6;}
+.form-group select option{background:var(--white);}
+
+/* Rating stars */
+.rating-row{display:flex;align-items:center;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid #f0ece3;}
+.rating-row:last-child{border-bottom:none;}
+.rating-label{font-size:.83rem;color:#3a2010;font-weight:500;flex:1;}
+.stars-input{display:flex;gap:.3rem;flex-direction:row-reverse;}
+.stars-input input{display:none;}
+.stars-input label{font-size:1.4rem;color:#ddd;cursor:pointer;transition:color .2s;line-height:1;}
+.stars-input input:checked ~ label,.stars-input label:hover,.stars-input label:hover ~ label{color:var(--gold);}
+
+/* checkbox group */
+.check-group{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.3rem;}
+.check-item{display:flex;align-items:center;gap:.4rem;background:var(--lightgray);border-radius:20px;padding:.3rem .8rem;cursor:pointer;font-size:.78rem;font-weight:500;transition:all .25s;border:1.5px solid transparent;}
+.check-item:hover{border-color:var(--clay2);background:#fdf0ea;}
+.check-item input{display:none;}
+.check-item.checked{background:#fdf0ea;border-color:var(--clay2);color:var(--clay);}
+
+/* status badge */
+.badge{display:inline-flex;align-items:center;gap:.3rem;padding:.25rem .7rem;border-radius:20px;font-size:.7rem;font-weight:700;letter-spacing:.5px;}
+.badge-green{background:#edfaf0;color:#2d7a3a;border:1px solid #b8e8c0;}
+.badge-clay{background:#fdf0ea;color:var(--clay);border:1px solid #f0c0a0;}
+.badge-gray{background:var(--lightgray);color:var(--gray);border:1px solid #d0c8c0;}
+.badge-gold{background:#fdf8e8;color:#8a6a10;border:1px solid #e8d890;}
+
+/* ── SUBMIT BTN ── */
+.submit-btn{
+  background:var(--clay2);color:var(--white);
+  border:none;border-radius:8px;padding:.9rem 2rem;
+  font-family:'Vazirmatn',sans-serif;font-size:.95rem;font-weight:700;
+  cursor:pointer;transition:all .3s;display:inline-flex;align-items:center;gap:.5rem;
+}
+.submit-btn:hover{background:var(--clay);transform:translateY(-2px);box-shadow:0 6px 20px rgba(196,98,45,.3);}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+
+/* ── STATS GRID ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;}
+.stat-card{background:var(--white);border-radius:var(--radius);padding:1.2rem;box-shadow:var(--shadow);text-align:center;border-top:3px solid var(--clay2);}
+.stat-card.green{border-top-color:var(--green3);}
+.stat-card.gold{border-top-color:var(--gold);}
+.stat-card.dark{border-top-color:var(--dark);}
+.stat-n{font-size:2rem;font-weight:800;color:var(--dark);line-height:1;}
+.stat-l{font-size:.72rem;color:var(--gray);margin-top:.3rem;font-weight:600;}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:.83rem;}
+thead tr{background:var(--dark);color:var(--cream);}
+thead th{padding:.8rem 1rem;text-align:right;font-weight:600;font-size:.75rem;letter-spacing:.5px;white-space:nowrap;}
+tbody tr{border-bottom:1px solid #f0ece3;transition:background .2s;}
+tbody tr:hover{background:#fdf8f5;}
+tbody td{padding:.75rem 1rem;color:#2a1509;vertical-align:middle;}
+
+/* ── REPORT VIEW ── */
+.report-card{
+  background:var(--white);border-radius:var(--radius);padding:1.8rem;
+  box-shadow:var(--shadow);margin-bottom:1rem;
+  border-right:4px solid var(--clay2);
+  cursor:pointer;transition:all .3s;
+}
+.report-card:hover{box-shadow:0 8px 30px rgba(196,98,45,.15);transform:translateX(-3px);}
+.rc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.8rem;}
+.rc-name{font-size:1rem;font-weight:800;color:var(--dark);}
+.rc-meta{font-size:.75rem;color:var(--gray);margin-top:.2rem;}
+.rc-score{text-align:center;}
+.rc-score-n{font-size:1.8rem;font-weight:800;color:var(--clay);}
+.rc-score-l{font-size:.65rem;color:var(--gray);}
+.rc-skills{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.6rem;}
+.skill-pill{background:#fdf0ea;color:var(--clay);border:1px solid #f0c0a0;border-radius:20px;padding:.2rem .7rem;font-size:.7rem;font-weight:600;}
+
+/* ── PROGRESS BAR ── */
+.progress-wrap{margin:.4rem 0;}
+.progress-label{display:flex;justify-content:space-between;font-size:.75rem;color:var(--gray);margin-bottom:.2rem;}
+.progress-bar{height:6px;background:#f0ece3;border-radius:10px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,var(--clay2),var(--clay3));transition:width .6s ease;}
+
+/* ── MODAL ── */
+.modal-ov{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1rem;}
+.modal-ov.on{display:flex;}
+.modal-box{background:var(--white);border-radius:16px;padding:2rem;width:100%;max-width:700px;max-height:90vh;overflow-y:auto;box-shadow:0 30px 80px rgba(0,0,0,.3);}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:2px solid var(--lightgray);}
+.modal-title{font-size:1.1rem;font-weight:800;color:var(--dark);}
+.modal-close{background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--gray);transition:color .3s;padding:.2rem;}
+.modal-close:hover{color:var(--clay);}
+
+/* ── ALERT ── */
+.alert{border-radius:8px;padding:.9rem 1.2rem;margin-bottom:1rem;font-size:.85rem;display:none;}
+.alert-success{background:#edfaf0;border:1px solid #b8e8c0;color:#2d7a3a;}
+.alert-err{background:#fdecea;border:1px solid #f5b8b0;color:#c0392b;}
+.alert.show{display:block;}
+
+/* ── PRINT ── */
+@media print{
+  .topbar,.nav-tabs,.no-print{display:none!important;}
+  .main{padding:0;max-width:none;}
+  .card{box-shadow:none;border:1px solid #ddd;break-inside:avoid;}
+}
+
+/* ── SECTION HEADER ── */
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;}
+.section-title{font-size:1.1rem;font-weight:800;color:var(--dark);}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:3rem;color:var(--gray);}
+.empty-state .ico{font-size:3rem;display:block;margin-bottom:.8rem;}
+.empty-state p{font-size:.9rem;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:700px){
+  .stats-grid{grid-template-columns:1fr 1fr;}
+  .form-grid,.form-grid-3{grid-template-columns:1fr;}
+  .main{padding:1rem;}
+}
+
+/* SECTION DIVIDER */
+.sec-divider{font-size:.7rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--clay);background:#fdf0ea;border:1px solid #f0c0a0;border-radius:5px;padding:.3rem .8rem;display:inline-block;margin-bottom:.8rem;}
+
+/* PLAYER ROW in selector */
+.player-option{padding:.6rem 1rem;border-bottom:1px solid #f0ece3;cursor:pointer;display:flex;align-items:center;gap:.8rem;transition:background .2s;border-radius:6px;}
+.player-option:hover{background:#fdf0ea;}
+.p-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:800;color:var(--white);}
+.p-name{font-size:.88rem;font-weight:700;color:var(--dark);}
+.p-level{font-size:.72rem;color:var(--gray);}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════
+     LOGIN SCREEN
+════════════════════════════════ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <span class="ico">🎾</span>
+      <h1>SLR Tennis Academy</h1>
+      <p>سیستم مدیریت آکادمی</p>
+      <div id="todayDateDisplay" style="font-size:.78rem;color:var(--clay2);font-weight:700;margin-top:.4rem;background:#fdf0ea;border-radius:6px;padding:.3rem .8rem;display:inline-block;"></div>
+    </div>
+    <div class="lform-group">
+      <label>ایمیل</label>
+      <input type="email" id="loginEmail" placeholder="email@example.com" dir="ltr" style="text-align:left" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="lform-group">
+      <label>رمز عبور</label>
+      <input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="login-err" id="loginErr">❌ ایمیل یا رمز اشتباه است</div>
+    <button class="login-btn" onclick="doLogin()">ورود به سیستم</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     MAIN APP
+════════════════════════════════ -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-logo"><span class="dot"></span>SLR TENNIS</div>
+    <div class="topbar-user">
+      <div>
+        <div class="topbar-name" id="topbarName"></div>
+        <div class="topbar-role" id="topbarRole"></div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">خروج</button>
+    </div>
+  </div>
+
+  <!-- NAV (dynamic based on role) -->
+  <div class="nav-tabs" id="navTabs"></div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main" id="mainContent"></div>
+</div>
+
+<!-- ════════════════════════════════
+     REPORT DETAIL MODAL
+════════════════════════════════ -->
+<div class="modal-ov" id="reportModal" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="modal-box" id="reportModalContent"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// تبدیل تاریخ میلادی به شمسی (جلالی)
+// ═══════════════════════════════════════════
+// الگوریتم صحیح تبدیل میلادی به شمسی (jalaali-js)
+function toJalali(gy, gm, gd) {
+  var g_y = gy - 1600, g_m = gm - 1, g_d = gd - 1, i;
+  var g_d_no = 365*g_y + Math.floor((g_y+3)/4) - Math.floor((g_y+99)/100) + Math.floor((g_y+399)/400);
+  var gml = [31,28,31,30,31,30,31,31,30,31,30,31];
+  for (i = 0; i < g_m; i++) g_d_no += gml[i];
+  if (g_m > 1 && ((gy%4===0 && gy%100!==0) || gy%400===0)) g_d_no++;
+  g_d_no += g_d;
+  var j_d_no = g_d_no - 79;
+  var j_np = Math.floor(j_d_no / 12053); j_d_no %= 12053;
+  var jy = 979 + 33*j_np + 4*Math.floor(j_d_no/1461);
+  j_d_no %= 1461;
+  if (j_d_no >= 366) { jy += Math.floor((j_d_no-1)/365); j_d_no = (j_d_no-1)%365; }
+  var jml = [31,31,31,31,31,31,30,30,30,30,30,29];
+  for (i = 0; i < 11 && j_d_no >= jml[i]; i++) j_d_no -= jml[i];
+  return [jy, i+1, j_d_no+1];
+}
+// الگوریتم صحیح تبدیل شمسی به میلادی
+function fromJalali(jy, jm, jd) {
+  jy += 1595;
+  var days = -355779 + 365*jy + Math.floor(jy/33)*8 + Math.floor(((jy%33)+3)/4) + 78
+           + jd + (jm < 7 ? (jm-1)*31 : (jm-7)*30 + 186);
+  var gy = 400 * Math.floor(days/146097); days %= 146097;
+  if (days > 36524) { gy += 100*Math.floor(--days/36524); days %= 36524; if (days >= 365) days++; }
+  gy += 4*Math.floor(days/1461); days %= 1461;
+  if (days > 365) { gy += Math.floor((days-1)/365); days = (days-1)%365; }
+  var gd = days + 1;
+  var gml = [0,31,29,31,30,31,30,31,31,30,31,30,31];
+  var gm = 0;
+  for (gm = 0; gd > gml[gm] && gm < 12; gm++) gd -= gml[gm];
+  return [gy, gm, gd];
+}
+function miladi2Shamsi(dateStr) {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length < 3) return dateStr;
+  const [jy, jm, jd] = toJalali(parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]));
+  const months = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+  return jd + ' ' + months[jm-1] + ' ' + jy;
+}
+function todayShamsiISO() {
+  const now = new Date();
+  const [jy, jm, jd] = toJalali(now.getFullYear(), now.getMonth()+1, now.getDate());
+  return jy + '-' + String(jm).padStart(2,'0') + '-' + String(jd).padStart(2,'0');
+}
+function todayShamsiReadable() {
+  const now = new Date();
+  const [jy, jm, jd] = toJalali(now.getFullYear(), now.getMonth()+1, now.getDate());
+  const months = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+  const days = ['یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه','شنبه'];
+  return days[now.getDay()] + ' ' + jd + ' ' + months[jm-1] + ' ' + jy;
+}
+function shamsi2MiladiISO(shamsiStr) {
+  if (!shamsiStr) return '';
+  const parts = shamsiStr.split('-');
+  if (parts.length < 3) return shamsiStr;
+  const [gy, gm, gd] = fromJalali(parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]));
+  return gy + '-' + String(gm).padStart(2,'0') + '-' + String(gd).padStart(2,'0');
+}
+function dateToMiladi(dateStr) {
+  if (!dateStr) return new Date(0);
+  const parts = dateStr.split('-');
+  const y = parseInt(parts[0]);
+  if (y > 1500) return new Date(dateStr);
+  const [gy, gm, gd] = fromJalali(y, parseInt(parts[1]), parseInt(parts[2]));
+  return new Date(gy, gm-1, gd);
+}
+
+// ════════════════════════════════════════
+// DATA STORE (localStorage-backed)
+// ════════════════════════════════════════
+
+const USERS = {
+  'SLRtennisacademy@gmail.com': {pass:'S@lar2026', role:'admin', name:'مدیر آکادمی SLR'},
+  'ali@slr.ir':   {pass:'Ali2024',  role:'coach', name:'علی رضایی',   coachId:'c1'},
+  'sara@slr.ir':  {pass:'Sara2024', role:'coach', name:'سارا محمدی',  coachId:'c2'},
+  'kian@slr.ir':  {pass:'Kian2024', role:'coach', name:'کیان احمدی',  coachId:'c3'},
+};
+
+const COACHES = {
+  c1:{name:'علی رضایی',   specialty:'تکنیک پایه'},
+  c2:{name:'سارا محمدی',  specialty:'سرویس · زمین خاک'},
+  c3:{name:'کیان احمدی',  specialty:'جوانان · فیزیک ورزشی'},
+};
+
+const PLAYERS_DEFAULT = [
+  {id:'p1', name:'محمد کریمی',    age:16, level:'پیشرفته',  coachId:'c1', avatar:'#c4622d'},
+  {id:'p2', name:'آرش شیرازی',   age:22, level:'متوسط',    coachId:'c1', avatar:'#2d6a1f'},
+  {id:'p3', name:'لیلا نجفی',    age:14, level:'متوسط',    coachId:'c2', avatar:'#e07a45'},
+  {id:'p4', name:'رضا موسوی',    age:19, level:'متوسط',    coachId:'c2', avatar:'#5dbc40'},
+  {id:'p5', name:'فاطمه علوی',   age:12, level:'مبتدی',    coachId:'c3', avatar:'#e8c14a'},
+  {id:'p6', name:'امیر تهرانی',  age:25, level:'متوسط',    coachId:'c3', avatar:'#c4622d'},
+  {id:'p7', name:'نیلوفر حسنی',  age:10, level:'مبتدی',    coachId:'c2', avatar:'#3d8c2a'},
+  {id:'p8', name:'دانیال رشیدی', age:13, level:'مبتدی',    coachId:'c1', avatar:'#d4622d'},
+];
+
+function getPlayers(){
+  const s = localStorage.getItem('slr_players');
+  return s ? JSON.parse(s) : PLAYERS_DEFAULT;
+}
+function savePlayers(p){ localStorage.setItem('slr_players',JSON.stringify(p)); }
+
+function getReports(){
+  const s = localStorage.getItem('slr_reports');
+  return s ? JSON.parse(s) : [];
+}
+function saveReports(r){ localStorage.setItem('slr_reports',JSON.stringify(r)); }
+
+// ════════════════════════════════════════
+// SKILL SEGMENTS (for charts)
+// ════════════════════════════════════════
+const SKILL_SEGMENTS = {
+  'فورهند': ['fhGrip','fhSwing','fhCtrl'],
+  'بک‌هند': ['bhTech','bhCtrl','bhStab'],
+  'سرویس': ['svToss','svTech','svAcc'],
+  'ولی': ['vlFh','vlBh'],
+  'فوتورک': ['ftSpeed','ftPos','ftRec'],
+  'ذهنی و رفتاری': ['mnFocus','mnMotiv','mnNerve','mnTeam'],
+};
+const SKILL_NAMES_MAP = {
+  fhGrip:'گریپ فورهند',fhSwing:'تاکسوئینگ',fhCtrl:'کنترل فورهند',
+  bhTech:'تکنیک بک‌هند',bhCtrl:'کنترل بک‌هند',bhStab:'ثبات بک‌هند',
+  svToss:'پرتاب توپ',svTech:'تکنیک سرویس',svAcc:'دقت سرویس',
+  vlFh:'ولی فورهند',vlBh:'ولی بک‌هند',
+  ftSpeed:'سرعت حرکت',ftPos:'موقعیت‌گیری',ftRec:'بازگشت',
+  mnFocus:'تمرکز',mnMotiv:'انگیزه',mnNerve:'کنترل اعصاب',mnTeam:'رفتار تیمی',
+};
+function segmentAverage(ratings, keys){
+  const vals = keys.map(k=>ratings?.[k]).filter(v=>typeof v==='number');
+  if(!vals.length) return 0;
+  return +(vals.reduce((a,v)=>a+v,0)/vals.length).toFixed(2);
+}
+const CHART_COLORS = ['#c4622d','#2d6a1f','#e07a45','#5dbc40','#e8c14a','#3d8c2a','#8a7a6e'];
+
+
+let currentUser = null;
+function doLogin(){
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const pass  = document.getElementById('loginPass').value;
+  const err   = document.getElementById('loginErr');
+  // case-insensitive email lookup
+  const key = Object.keys(USERS).find(k=>k.toLowerCase()===email);
+  const user = key ? USERS[key] : null;
+  if(user && user.pass === pass){
+    currentUser = {...user, email:key};
+    err.style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    initApp();
+  } else {
+    err.style.display = 'block';
+  }
+}
+
+function doLogout(){
+  currentUser = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPass').value = '';
+}
+
+// ════════════════════════════════════════
+// APP INIT
+// ════════════════════════════════════════
+let activeTab = '';
+
+function initApp(){
+  document.getElementById('topbarName').textContent = currentUser.name;
+  document.getElementById('topbarRole').textContent = currentUser.role === 'admin' ? 'مدیر آکادمی' : 'مربی';
+  buildNav();
+  const firstTab = currentUser.role === 'admin' ? 'dashboard' : 'new-report';
+  showTab(firstTab);
+}
+
+function buildNav(){
+  const tabs = currentUser.role === 'admin'
+    ? [
+        {id:'dashboard',    label:'📊 داشبورد'},
+        {id:'all-reports',  label:'📋 همه گزارش‌ها'},
+        {id:'players',      label:'👥 بازیکنان'},
+        {id:'by-coach',     label:'📊 گزارش مربیان'},
+        {id:'manage-coaches', label:'👨‍🏫 مدیریت مربیان'},
+      ]
+    : [
+        {id:'new-report',   label:'✏️ ثبت گزارش'},
+        {id:'my-reports',   label:'📋 گزارش‌های من'},
+        {id:'my-players',   label:'👥 بازیکنانم'},
+      ];
+  document.getElementById('navTabs').innerHTML = tabs.map(t =>
+    `<button class="ntab" id="ntab-${t.id}" onclick="showTab('${t.id}')">${t.label}</button>`
+  ).join('');
+}
+
+function showTab(id){
+  activeTab = id;
+  document.querySelectorAll('.ntab').forEach(b=>b.classList.remove('a'));
+  const btn = document.getElementById('ntab-'+id);
+  if(btn) btn.classList.add('a');
+  const mc = document.getElementById('mainContent');
+  mc.innerHTML = '';
+  const renders = {
+    'dashboard':   renderDashboard,
+    'all-reports': renderAllReports,
+    'players':     renderPlayers,
+    'by-coach':    renderByCoach,
+    'guide':       renderGuide,
+    'new-report':  renderNewReport,
+    'my-reports':  renderMyReports,
+    'my-players':  renderMyPlayers,
+  };
+  if(renders[id]) renders[id]();
+}
+
+// ════════════════════════════════════════
+// DASHBOARD (admin)
+// ════════════════════════════════════════
+function renderDashboard(){
+  const reports = getReports();
+  const players = getPlayers();
+  const thisMonth = reports.filter(r=>{
+    const d = dateToMiladi(r.date);
+    const n = new Date();
+    return d.getMonth()===n.getMonth() && d.getFullYear()===n.getFullYear();
+  });
+  const avgScore = reports.length ? Math.round(reports.reduce((a,r)=>a+(r.totalScore||0),0)/reports.length) : 0;
+  const html = `
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-n">${players.length}</div><div class="stat-l">بازیکن فعال</div></div>
+    <div class="stat-card green"><div class="stat-n">${reports.length}</div><div class="stat-l">کل گزارش‌ها</div></div>
+    <div class="stat-card gold"><div class="stat-n">${thisMonth.length}</div><div class="stat-l">گزارش این ماه</div></div>
+    <div class="stat-card dark"><div class="stat-n">${avgScore || '—'}</div><div class="stat-l">میانگین نمره</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+    <div class="card">
+      <div class="card-title"><span class="ico">📋</span> آخرین گزارش‌ها</div>
+      ${reports.length === 0 ? '<div class="empty-state"><span class="ico">📭</span><p>هنوز گزارشی ثبت نشده</p></div>' :
+        reports.slice(-5).reverse().map(r=>`
+          <div class="report-card" onclick="showReport('${r.id}')">
+            <div class="rc-header">
+              <div>
+                <div class="rc-name">${r.playerName}</div>
+                <div class="rc-meta">مربی: ${r.coachName} · ${miladi2Shamsi(r.date)} · ${r.sessionTime}</div>
+              </div>
+              <div class="rc-score">
+                <div class="rc-score-n">${r.totalScore}</div>
+                <div class="rc-score-l">از ۱۰۰</div>
+              </div>
+            </div>
+            <div class="rc-skills">${(r.focusAreas||[]).map(f=>`<span class="skill-pill">${f}</span>`).join('')}</div>
+          </div>`).join('')}
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ico">👨‍🏫</span> فعالیت مربیان</div>
+      ${Object.entries(COACHES).map(([id,c])=>{
+        const cnt = reports.filter(r=>r.coachId===id).length;
+        const pct = reports.length ? Math.round(cnt/reports.length*100) : 0;
+        return `<div style="margin-bottom:1.2rem;">
+          <div class="progress-label"><span>${c.name}</span><span>${cnt} گزارش</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(pct*2,100)}%"></div></div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// ALL REPORTS (admin)
+// ════════════════════════════════════════
+function renderAllReports(){
+  const reports = getReports();
+  const html = `
+  <div class="section-header">
+    <div class="section-title">📋 همه گزارش‌های ارزیابی</div>
+    <div style="display:flex;gap:.5rem;align-items:center;">
+      <select onchange="filterReports(this.value)" style="padding:.5rem .8rem;border:1.5px solid var(--lightgray);border-radius:6px;font-family:'Vazirmatn',sans-serif;font-size:.8rem;background:var(--white);">
+        <option value="all">همه مربیان</option>
+        ${Object.entries(COACHES).map(([id,c])=>`<option value="${id}">${c.name}</option>`).join('')}
+      </select>
+    </div>
+  </div>
+  <div id="reportsList">
+    ${reports.length === 0 ? '<div class="empty-state"><span class="ico">📭</span><p>هنوز گزارشی ثبت نشده است</p></div>' :
+      reports.slice().reverse().map(r=>renderReportCard(r)).join('')}
+  </div>`;
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+function filterReports(coachId){
+  const reports = getReports();
+  const filtered = coachId === 'all' ? reports : reports.filter(r=>r.coachId===coachId);
+  document.getElementById('reportsList').innerHTML = filtered.length === 0
+    ? '<div class="empty-state"><span class="ico">📭</span><p>گزارشی یافت نشد</p></div>'
+    : filtered.slice().reverse().map(r=>renderReportCard(r)).join('');
+}
+
+function renderReportCard(r){
+  return `<div class="report-card" onclick="showReport('${r.id}')">
+    <div class="rc-header">
+      <div>
+        <div class="rc-name">${r.playerName}</div>
+        <div class="rc-meta">مربی: ${r.coachName} · تاریخ: ${miladi2Shamsi(r.date)} · ساعت: ${r.sessionTime} · سطح: ${r.playerLevel}</div>
+        <div style="margin-top:.4rem;font-size:.8rem;color:#5a3a20;">${r.coachNote||''}</div>
+      </div>
+      <div class="rc-score">
+        <div class="rc-score-n" style="color:${r.totalScore>=80?'#2d7a3a':r.totalScore>=60?'var(--clay)':'#c0392b'}">${r.totalScore}</div>
+        <div class="rc-score-l">از ۱۰۰</div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.5rem;">
+      <div class="rc-skills">${(r.focusAreas||[]).map(f=>`<span class="skill-pill">${f}</span>`).join('')}</div>
+      <span class="badge ${r.mood==='عالی'?'badge-green':r.mood==='بی‌انگیزه'?'badge-gray':'badge-clay'}">${r.mood||''}</span>
+    </div>
+  </div>`;
+}
+
+// ════════════════════════════════════════
+// PLAYERS (admin)
+// ════════════════════════════════════════
+function renderPlayers(){
+  const players = getPlayers();
+  const reports = getReports();
+  const html = `
+  <div class="section-header">
+    <div class="section-title">👥 بازیکنان</div>
+    <button class="submit-btn" style="font-size:.8rem;padding:.6rem 1.2rem;" onclick="showAddPlayer()">+ افزودن بازیکن</button>
+  </div>
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>نام بازیکن</th><th>سن</th><th>سطح</th><th>مربی</th><th>تعداد گزارش</th><th>آخرین نمره</th>
+        </tr></thead>
+        <tbody>
+          ${players.map(p=>{
+            const pr = reports.filter(r=>r.playerId===p.id);
+            const last = pr.length ? pr[pr.length-1] : null;
+            return `<tr style="cursor:pointer" onclick="showPlayerProfile('${p.id}','players')">
+              <td><div style="display:flex;align-items:center;gap:.6rem;">
+                <div class="p-avatar" style="background:${p.avatar};width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:white;font-weight:800;">${p.name[0]}</div>
+                <div>
+                  <div style="font-weight:700;font-size:.88rem;">${p.name}</div>
+                </div>
+              </div></td>
+              <td>${p.age}</td>
+              <td><span class="badge ${p.level==='پیشرفته'?'badge-green':p.level==='متوسط'?'badge-clay':'badge-gray'}">${p.level}</span></td>
+              <td>${COACHES[p.coachId]?.name||'—'}</td>
+              <td>${pr.length}</td>
+              <td>${last?`<span style="font-weight:800;color:var(--clay);">${last.totalScore}</span>`:'-'}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+function showAddPlayer(){
+  const isCoach = currentUser.role === 'coach';
+  const modal = document.getElementById('reportModal');
+  document.getElementById('reportModalContent').innerHTML = `
+    <div class="modal-header">
+      <div class="modal-title">➕ افزودن بازیکن جدید</div>
+      <button class="modal-close" onclick="document.getElementById('reportModal').classList.remove('on')">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label>نام کامل</label><input id="np-name" type="text" placeholder="نام و نام خانوادگی"></div>
+      <div class="form-group"><label>سن</label><input id="np-age" type="number" placeholder="سن"></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label>سطح</label>
+        <select id="np-level"><option>مبتدی</option><option>متوسط</option><option>پیشرفته</option></select>
+      </div>
+      ${isCoach ? '' : `<div class="form-group"><label>مربی</label>
+        <select id="np-coach">
+          ${Object.entries(COACHES).map(([id,c])=>`<option value="${id}">${c.name}</option>`).join('')}
+        </select>
+      </div>`}
+    </div>
+    <button class="submit-btn" onclick="addPlayer()">ذخیره بازیکن</button>`;
+  modal.classList.add('on');
+}
+
+function addPlayer(){
+  const isCoach = currentUser.role === 'coach';
+  const name = document.getElementById('np-name').value.trim();
+  const age  = document.getElementById('np-age').value;
+  const level= document.getElementById('np-level').value;
+  const coach= isCoach ? currentUser.coachId : document.getElementById('np-coach').value;
+  if(!name||!age){alert('نام و سن الزامیست');return;}
+  const players = getPlayers();
+  const colors = ['#c4622d','#2d6a1f','#e07a45','#5dbc40','#e8c14a','#3d8c2a'];
+  players.push({
+    id:'p'+Date.now(), name, age:parseInt(age), level, coachId:coach,
+    avatar:colors[Math.floor(Math.random()*colors.length)]
+  });
+  savePlayers(players);
+  document.getElementById('reportModal').classList.remove('on');
+  if(isCoach) renderMyPlayers(); else renderPlayers();
+}
+
+// ════════════════════════════════════════
+// BY COACH (admin)
+// ════════════════════════════════════════
+function renderByCoach(){
+  const reports = getReports();
+  const html = `
+  <div class="section-title" style="margin-bottom:1.5rem;">👨‍🏫 گزارش‌ها به تفکیک مربی</div>
+  ${Object.entries(COACHES).map(([id,c])=>{
+    const cr = reports.filter(r=>r.coachId===id);
+    const avg = cr.length ? Math.round(cr.reduce((a,r)=>a+(r.totalScore||0),0)/cr.length) : 0;
+    return `<div class="card">
+      <div class="card-title">
+        <span class="ico">👨‍🏫</span> ${c.name}
+        <span style="margin-right:auto;font-size:.75rem;color:var(--gray);">${c.specialty}</span>
+        <span class="badge badge-clay">${cr.length} گزارش</span>
+        ${avg?`<span class="badge badge-green">میانگین: ${avg}</span>`:''}
+      </div>
+      ${cr.length === 0
+        ? '<div style="color:var(--gray);font-size:.85rem;text-align:center;padding:1rem;">هنوز گزارشی ثبت نشده</div>'
+        : cr.slice().reverse().slice(0,3).map(r=>renderReportCard(r)).join('')
+      }
+      ${cr.length > 3 ? `<div style="text-align:center;margin-top:.5rem;"><span style="font-size:.78rem;color:var(--clay);cursor:pointer;" onclick="filterAndShow('${id}')">مشاهده همه ${cr.length} گزارش ←</span></div>` : ''}
+    </div>`;
+  }).join('')}`;
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+function filterAndShow(coachId){
+  showTab('all-reports');
+  setTimeout(()=>{
+    const sel = document.querySelector('#mainContent select');
+    if(sel){sel.value=coachId;filterReports(coachId);}
+  },100);
+}
+
+// ════════════════════════════════════════
+// NEW REPORT (coach)
+// ════════════════════════════════════════
+function renderNewReport(){
+  const myPlayers = getPlayers().filter(p=>p.coachId===currentUser.coachId);
+  const dateStr = todayShamsiISO(); // تاریخ شمسی امروز
+  const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+  const html = `
+  <div class="alert alert-success" id="saveAlert">✅ گزارش با موفقیت ذخیره شد!</div>
+  <div class="card">
+    <div class="card-title"><span class="ico">✏️</span> ثبت گزارش ارزیابی بازیکن</div>
+
+    <!-- بخش ۱: اطلاعات پایه -->
+    <div class="sec-divider">بخش ۱ — اطلاعات پایه</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>انتخاب بازیکن *</label>
+        <select id="r-player" onchange="onPlayerSelect(this.value)">
+          <option value="">— انتخاب کنید —</option>
+          ${myPlayers.map(p=>`<option value="${p.id}">${p.name} (${p.level})</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>سطح بازیکن</label>
+        <input type="text" id="r-level" placeholder="خودکار پر می‌شود" readonly style="background:#f0ece3;">
+      </div>
+    </div>
+    <div class="form-grid-3">
+      <div class="form-group">
+        <label>تاریخ جلسه (شمسی) * <span style="font-size:.65rem;font-weight:400;color:var(--gray);">مثال: ۱۴۰۵-۰۳-۲۳</span></label>
+        <input type="text" id="r-date" value="${dateStr}" placeholder="YYYY-MM-DD شمسی" dir="ltr" style="text-align:left;font-family:monospace;">
+        <div style="font-size:.72rem;color:var(--gray);margin-top:.3rem;" id="datePreview"></div>
+      </div>
+      <div class="form-group"><label>ساعت جلسه *</label><input type="time" id="r-time" value="${timeStr}"></div>
+      <div class="form-group"><label>حضور</label>
+        <select id="r-attend">
+          <option value="حاضر">✅ حاضر</option>
+          <option value="غایب">❌ غایب</option>
+          <option value="دیر">⚠️ دیر اومد</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="aiSuggestionBox"></div>
+
+
+    <!-- بخش ۲: موضوع تمرین -->
+    <div class="sec-divider" style="margin-top:.5rem;">بخش ۲ — موضوع تمرین امروز</div>
+    <div class="form-group">
+      <label>روی چه مواردی کار شد؟ (چند مورد انتخاب کنید)</label>
+      <div class="check-group" id="focusGroup">
+        ${['فورهند','بک‌هند','سرویس','ولی','اسمش','فوتورک','تاکتیک','بازی آزاد','روانشناسی','استقامت'].map(f=>
+          `<label class="check-item" onclick="toggleCheck(this)"><input type="checkbox" value="${f}"> ${f}</label>`
+        ).join('')}
+      </div>
+    </div>
+
+    <!-- بخش ۳: ارزیابی تکنیکی -->
+    <div class="sec-divider" style="margin-top:.5rem;">بخش ۳ — ارزیابی تکنیکی (۱ تا ۵ ستاره)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 2rem;">
+      <div>
+        <div style="font-size:.78rem;font-weight:700;color:var(--clay);margin-bottom:.5rem;letter-spacing:1px;">فورهند</div>
+        ${buildRating('fh-grip','گریپ','fh-swing','تاکسوئینگ','fh-ctrl','کنترل')}
+        <div style="font-size:.78rem;font-weight:700;color:var(--clay);margin:.8rem 0 .5rem;letter-spacing:1px;">بک‌هند</div>
+        ${buildRating('bh-tech','تکنیک','bh-ctrl','کنترل','bh-stab','ثبات')}
+        <div style="font-size:.78rem;font-weight:700;color:var(--clay);margin:.8rem 0 .5rem;letter-spacing:1px;">سرویس</div>
+        ${buildRating('sv-toss','پرتاب توپ','sv-tech','تکنیک','sv-acc','دقت')}
+      </div>
+      <div>
+        <div style="font-size:.78rem;font-weight:700;color:var(--clay);margin-bottom:.5rem;letter-spacing:1px;">ولی</div>
+        ${buildRating('vl-fh','فورهند ولی','vl-bh','بک‌هند ولی')}
+        <div style="font-size:.78rem;font-weight:700;color:var(--clay);margin:.8rem 0 .5rem;letter-spacing:1px;">فوتورک و جابجایی</div>
+        ${buildRating('ft-speed','سرعت','ft-pos','موقعیت‌گیری','ft-rec','بازگشت')}
+        <div style="font-size:.78rem;font-weight:700;color:var(--clay);margin:.8rem 0 .5rem;letter-spacing:1px;">ذهنی و رفتاری</div>
+        ${buildRating('mn-focus','تمرکز','mn-motiv','انگیزه','mn-nerve','کنترل اعصاب','mn-team','رفتار با هم‌تیمی')}
+      </div>
+    </div>
+
+    <!-- بخش ۴: حال کلی -->
+    <div class="sec-divider" style="margin-top:.5rem;">بخش ۴ — حال کلی بازیکن</div>
+    <div class="form-grid">
+      <div class="form-group"><label>حال امروز</label>
+        <select id="r-mood">
+          <option>عالی 🔥</option><option>خوب 😊</option><option>معمولی 😐</option><option>بی‌انگیزه 😔</option><option>خستگی جسمی 😓</option>
+        </select>
+      </div>
+      <div class="form-group"><label>آمادگی برای ارتقاء سطح؟</label>
+        <select id="r-upgrade">
+          <option>بله، آماده است ✅</option>
+          <option>یک ماه دیگه نیاز داره ⏳</option>
+          <option>هنوز خیر ❌</option>
+          <option>نیاز به توجه ویژه ⚠️</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- بخش ۵: یادداشت‌ها -->
+    <div class="sec-divider" style="margin-top:.5rem;">بخش ۵ — یادداشت و هدف</div>
+    <div class="form-group">
+      <label>بزرگ‌ترین پیشرفت این جلسه</label>
+      <input type="text" id="r-progress" placeholder="مثال: سرویس flat بهتر شد، فوتورک به شکل چشمگیری بهبود یافت...">
+    </div>
+    <div class="form-group">
+      <label>چالش اصلی که باید روش کار بشه</label>
+      <input type="text" id="r-challenge" placeholder="مثال: بک‌هند cross-court هنوز ضعیفه...">
+    </div>
+    <div class="form-group">
+      <label>تمرین خانگی پیشنهادی</label>
+      <textarea id="r-homework" placeholder="مثال: ۱۵ دقیقه shadow footwork، تمرین ضربه دیواری..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>پیام به والدین / بازیکن (این بخش برای والدین ارسال می‌شود)</label>
+      <textarea id="r-parent" placeholder="یک جمله انگیزه‌بخش و گرم برای والدین بنویسید..."></textarea>
+    </div>
+
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:.5rem;">
+      <button class="submit-btn" onclick="saveReport()">💾 ذخیره گزارش</button>
+      <button style="background:var(--lightgray);color:var(--gray);border:none;border-radius:8px;padding:.9rem 1.5rem;font-family:'Vazirmatn',sans-serif;font-size:.88rem;cursor:pointer;" onclick="resetForm()">🔄 پاک کردن فرم</button>
+    </div>
+  </div>`;
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+function buildRating(...pairs){
+  let html = '';
+  for(let i=0;i<pairs.length;i+=2){
+    const id=pairs[i], label=pairs[i+1];
+    if(!label) break;
+    html += `<div class="rating-row">
+      <div class="rating-label">${label}</div>
+      <div class="stars-input">
+        <input type="radio" name="${id}" id="${id}-5" value="5"><label for="${id}-5">★</label>
+        <input type="radio" name="${id}" id="${id}-4" value="4"><label for="${id}-4">★</label>
+        <input type="radio" name="${id}" id="${id}-3" value="3" checked><label for="${id}-3">★</label>
+        <input type="radio" name="${id}" id="${id}-2" value="2"><label for="${id}-2">★</label>
+        <input type="radio" name="${id}" id="${id}-1" value="1"><label for="${id}-1">★</label>
+      </div>
+    </div>`;
+  }
+  return html;
+}
+
+function toggleCheck(el){
+  el.classList.toggle('checked');
+  el.querySelector('input').checked = el.classList.contains('checked');
+}
+
+function onPlayerSelect(id){
+  const p = getPlayers().find(x=>x.id===id);
+  if(p) document.getElementById('r-level').value = p.level;
+  const box = document.getElementById('aiSuggestionBox');
+  if(!box) return;
+  if(!id){ box.innerHTML = ''; return; }
+  generateCoachSuggestion(id);
+}
+
+function getRating(name){
+  const checked = document.querySelector(`input[name="${name}"]:checked`);
+  return checked ? parseInt(checked.value) : 3;
+}
+
+function saveReport(){
+  const playerId = document.getElementById('r-player').value;
+  if(!playerId){alert('لطفاً بازیکن را انتخاب کنید');return;}
+  const player = getPlayers().find(p=>p.id===playerId);
+  const focusAreas = [...document.querySelectorAll('#focusGroup .check-item.checked')].map(el=>el.querySelector('input').value);
+  const ratings = {
+    fhGrip:getRating('fh-grip'), fhSwing:getRating('fh-swing'), fhCtrl:getRating('fh-ctrl'),
+    bhTech:getRating('bh-tech'), bhCtrl:getRating('bh-ctrl'), bhStab:getRating('bh-stab'),
+    svToss:getRating('sv-toss'), svTech:getRating('sv-tech'), svAcc:getRating('sv-acc'),
+    vlFh:getRating('vl-fh'), vlBh:getRating('vl-bh'),
+    ftSpeed:getRating('ft-speed'), ftPos:getRating('ft-pos'), ftRec:getRating('ft-rec'),
+    mnFocus:getRating('mn-focus'), mnMotiv:getRating('mn-motiv'), mnNerve:getRating('mn-nerve'), mnTeam:getRating('mn-team'),
+  };
+  const totalScore = Math.round(Object.values(ratings).reduce((a,v)=>a+v,0)/Object.values(ratings).length*20);
+  const report = {
+    id: 'r'+Date.now(),
+    coachId: currentUser.coachId,
+    coachName: currentUser.name,
+    playerId, playerName: player.name, playerLevel: player.level,
+    date: document.getElementById('r-date').value,
+    sessionTime: document.getElementById('r-time').value,
+    attendance: document.getElementById('r-attend').value,
+    focusAreas, ratings, totalScore,
+    mood: document.getElementById('r-mood').value,
+    upgrade: document.getElementById('r-upgrade').value,
+    progress: document.getElementById('r-progress').value,
+    challenge: document.getElementById('r-challenge').value,
+    homework: document.getElementById('r-homework').value,
+    coachNote: document.getElementById('r-parent').value,
+    createdAt: new Date().toISOString(),
+  };
+  const reports = getReports();
+  reports.push(report);
+  saveReports(reports);
+  const alert = document.getElementById('saveAlert');
+  alert.classList.add('show');
+  setTimeout(()=>{alert.classList.remove('show');resetForm();},3000);
+}
+
+function resetForm(){
+  document.getElementById('r-player').value='';
+  document.getElementById('r-level').value='';
+  document.getElementById('r-progress').value='';
+  document.getElementById('r-challenge').value='';
+  document.getElementById('r-homework').value='';
+  document.getElementById('r-parent').value='';
+  document.querySelectorAll('#focusGroup .check-item.checked').forEach(el=>{el.classList.remove('checked');el.querySelector('input').checked=false;});
+}
+
+// ════════════════════════════════════════
+// MY REPORTS (coach)
+// ════════════════════════════════════════
+function renderMyReports(){
+  const reports = getReports().filter(r=>r.coachId===currentUser.coachId);
+  const html = `
+  <div class="section-title" style="margin-bottom:1.5rem;">📋 گزارش‌های من</div>
+  ${reports.length === 0
+    ? '<div class="empty-state"><span class="ico">📭</span><p>هنوز گزارشی ثبت نکرده‌اید</p></div>'
+    : reports.slice().reverse().map(r=>renderReportCard(r)).join('')}`;
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// MY PLAYERS (coach)
+// ════════════════════════════════════════
+function renderMyPlayers(){
+  const players = getPlayers().filter(p=>p.coachId===currentUser.coachId);
+  const reports = getReports();
+  const html = `
+  <div class="section-header">
+    <div class="section-title">👥 بازیکنان من</div>
+    <button class="submit-btn" style="font-size:.8rem;padding:.6rem 1.2rem;" onclick="showAddPlayer()">+ افزودن بازیکن</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;">
+    ${players.map(p=>{
+      const pr = reports.filter(r=>r.playerId===p.id);
+      const last = pr.length ? pr[pr.length-1] : null;
+      return `<div class="card" style="cursor:pointer" onclick="showPlayerProfile('${p.id}','my-players')">
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
+          <div style="width:48px;height:48px;border-radius:50%;background:${p.avatar};display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:white;font-weight:800;flex-shrink:0;">${p.name[0]}</div>
+          <div>
+            <div style="font-weight:800;font-size:.95rem;">${p.name}</div>
+            <div style="font-size:.75rem;color:var(--gray);">${p.age} ساله · <span class="badge ${p.level==='پیشرفته'?'badge-green':p.level==='متوسط'?'badge-clay':'badge-gray'}" style="font-size:.65rem;">${p.level}</span></div>
+          </div>
+          ${last?`<div style="margin-right:auto;text-align:center;"><div style="font-size:1.5rem;font-weight:800;color:var(--clay);">${last.totalScore}</div><div style="font-size:.62rem;color:var(--gray);">نمره آخر</div></div>`:''}
+        </div>
+        <div style="font-size:.78rem;color:var(--gray);">${pr.length} گزارش ثبت شده</div>
+        ${last?`<div style="font-size:.75rem;color:var(--gray);margin-top:.3rem;">آخرین جلسه: ${miladi2Shamsi(last.date)}</div>`:''}
+        <button class="submit-btn" style="width:100%;margin-top:1rem;font-size:.8rem;padding:.6rem;" onclick="event.stopPropagation();document.getElementById('r-player').value='${p.id}';onPlayerSelect('${p.id}');showTab('new-report');setTimeout(()=>{document.getElementById('r-player').value='${p.id}';onPlayerSelect('${p.id}')},200)">+ گزارش جدید</button>
+      </div>`;
+    }).join('')}
+  </div>`;
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// PLAYER PROFILE (progress over time charts)
+// ════════════════════════════════════════
+function showPlayerProfile(playerId, backTab, period){
+  period = period || 'all';
+  const player = getPlayers().find(p=>p.id===playerId);
+  if(!player) return;
+  const allReports = getReports().filter(r=>r.playerId===playerId).slice().sort((a,b)=>dateToMiladi(a.date)-dateToMiladi(b.date));
+
+  const now = new Date();
+  let reports = allReports;
+  if(period === 'weekly'){
+    const cutoff = new Date(now); cutoff.setDate(cutoff.getDate()-7);
+    reports = allReports.filter(r=>dateToMiladi(r.date) >= cutoff);
+  } else if(period === 'monthly'){
+    const cutoff = new Date(now); cutoff.setMonth(cutoff.getMonth()-1);
+    reports = allReports.filter(r=>dateToMiladi(r.date) >= cutoff);
+  }
+
+  const segLabels = Object.keys(SKILL_SEGMENTS);
+  const periodLabel = {weekly:'هفتگی (۷ روز اخیر)', monthly:'ماهانه (۳۰ روز اخیر)', all:'روند کلی از ابتدا'}[period];
+
+  const html = `
+  <div class="section-header">
+    <div class="section-title">📈 روند پیشرفت — ${player.name}</div>
+    <button style="background:var(--lightgray);color:var(--gray);border:none;border-radius:8px;padding:.6rem 1.2rem;font-family:'Vazirmatn',sans-serif;font-size:.8rem;cursor:pointer;" onclick="showTab('${backTab}')">← بازگشت</button>
+  </div>
+
+  <div class="card no-print">
+    <div class="card-title"><span class="ico">📤</span> خروجی گزارش برای والدین</div>
+    <div class="form-grid-3">
+      <div class="form-group" style="margin-bottom:0;">
+        <label>بازه زمانی</label>
+        <select id="profPeriod" onchange="showPlayerProfile('${playerId}','${backTab}', this.value)">
+          <option value="weekly" ${period==='weekly'?'selected':''}>هفتگی (۷ روز اخیر)</option>
+          <option value="monthly" ${period==='monthly'?'selected':''}>ماهانه (۳۰ روز اخیر)</option>
+          <option value="all" ${period==='all'?'selected':''}>روند کلی از ابتدا</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:0;display:flex;align-items:flex-end;">
+        <button class="submit-btn" style="width:100%;font-size:.85rem;" onclick="exportPlayerExcel('${playerId}','${period}')">📊 خروجی Excel</button>
+      </div>
+      <div class="form-group" style="margin-bottom:0;display:flex;align-items:flex-end;">
+        <button class="submit-btn" style="width:100%;font-size:.85rem;background:var(--green2);" onclick="exportPlayerPDF('${playerId}','${period}')">📄 خروجی PDF</button>
+      </div>
+    </div>
+  </div>
+
+  ${reports.length===0 ? `<div class="empty-state"><span class="ico">📭</span><p>گزارشی برای بازه «${periodLabel}» یافت نشد</p></div>` : `
+  <div class="card">
+    <div class="card-title"><span class="ico">📊</span> روند نمره کلی — ${periodLabel}</div>
+    <canvas id="overallTrendChart" height="100"></canvas>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="ico">🧩</span> روند سگمنت‌ها — ${periodLabel}</div>
+    <canvas id="segTrendChart" height="120"></canvas>
+  </div>
+  `}
+  `;
+  document.getElementById('mainContent').innerHTML = html;
+  if(reports.length) setTimeout(()=>renderProfileCharts(reports, segLabels), 50);
+}
+
+function renderProfileCharts(reports, segLabels){
+  const labels = reports.map(r=>r.date);
+  if(window._overallTrendChart) window._overallTrendChart.destroy();
+  if(window._segTrendChart) window._segTrendChart.destroy();
+
+  const ovCtx = document.getElementById('overallTrendChart');
+  if(ovCtx && typeof Chart!=='undefined'){
+    window._overallTrendChart = new Chart(ovCtx, {
+      type:'line',
+      data:{
+        labels,
+        datasets:[{
+          label:'نمره کلی',
+          data: reports.map(r=>r.totalScore),
+          borderColor:'#c4622d',
+          backgroundColor:'rgba(196,98,45,.15)',
+          tension:.3, fill:true, pointRadius:4,
+        }]
+      },
+      options:{
+        scales:{ y:{ min:0, max:100 } },
+        plugins:{ legend:{display:false} }
+      }
+    });
+  }
+
+  const segCtx = document.getElementById('segTrendChart');
+  if(segCtx && typeof Chart!=='undefined'){
+    const datasets = segLabels.map((seg,i)=>({
+      label: seg,
+      data: reports.map(r=>segmentAverage(r.ratings, SKILL_SEGMENTS[seg])),
+      borderColor: CHART_COLORS[i % CHART_COLORS.length],
+      backgroundColor:'transparent',
+      tension:.3, pointRadius:3,
+    }));
+    window._segTrendChart = new Chart(segCtx, {
+      type:'line',
+      data:{ labels, datasets },
+      options:{
+        scales:{ y:{ min:0, max:5, ticks:{stepSize:1} } },
+        plugins:{ legend:{position:'bottom', labels:{font:{family:'Vazirmatn', size:11}}} }
+      }
+    });
+  }
+}
+
+// ════════════════════════════════════════
+// EXPORT — EXCEL & PDF
+// ════════════════════════════════════════
+function getFilteredReports(playerId, period){
+  const all = getReports().filter(r=>r.playerId===playerId).slice().sort((a,b)=>dateToMiladi(a.date)-dateToMiladi(b.date));
+  const now = new Date();
+  if(period === 'weekly'){
+    const cutoff = new Date(now); cutoff.setDate(cutoff.getDate()-7);
+    return all.filter(r=>dateToMiladi(r.date) >= cutoff);
+  }
+  if(period === 'monthly'){
+    const cutoff = new Date(now); cutoff.setMonth(cutoff.getMonth()-1);
+    return all.filter(r=>dateToMiladi(r.date) >= cutoff);
+  }
+  return all;
+}
+
+function exportPlayerExcel(playerId, period){
+  const player = getPlayers().find(p=>p.id===playerId);
+  const reports = getFilteredReports(playerId, period);
+  if(!reports.length){ alert('گزارشی برای این بازه یافت نشد'); return; }
+  const periodLabel = {weekly:'هفتگی', monthly:'ماهانه', all:'کلی'}[period];
+
+  const summary = reports.map(r=>({
+    'تاریخ': miladi2Shamsi(r.date), 'ساعت': r.sessionTime, 'مربی': r.coachName,
+    'حضور': r.attendance, 'نمره کلی': r.totalScore, 'حال بازیکن': r.mood,
+    'ارتقاء سطح': r.upgrade, 'پیشرفت': r.progress||'', 'چالش': r.challenge||'',
+    'تمرین خانگی': r.homework||'', 'پیام به والدین': r.coachNote||'',
+  }));
+
+  const skillRows = reports.map(r=>{
+    const row = {'تاریخ': miladi2Shamsi(r.date)};
+    Object.entries(SKILL_NAMES_MAP).forEach(([k,label])=>{ row[label] = r.ratings?.[k] ?? ''; });
+    return row;
+  });
+
+  const segRows = reports.map(r=>{
+    const row = {'تاریخ': miladi2Shamsi(r.date), 'نمره کلی': r.totalScore};
+    Object.keys(SKILL_SEGMENTS).forEach(seg=>{ row[seg] = segmentAverage(r.ratings, SKILL_SEGMENTS[seg]); });
+    return row;
+  });
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summary), 'خلاصه');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(segRows), 'سگمنت‌ها');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(skillRows), 'جزئیات مهارت‌ها');
+  XLSX.writeFile(wb, `گزارش-${player.name}-${periodLabel}.xlsx`);
+}
+
+function exportPlayerPDF(playerId, period){
+  const player = getPlayers().find(p=>p.id===playerId);
+  const reports = getFilteredReports(playerId, period);
+  if(!reports.length){ alert('گزارشی برای این بازه یافت نشد'); return; }
+  const periodLabel = {weekly:'هفتگی (۷ روز اخیر)', monthly:'ماهانه (۳۰ روز اخیر)', all:'روند کلی از ابتدا'}[period];
+  const avg = Math.round(reports.reduce((a,r)=>a+(r.totalScore||0),0)/reports.length);
+  const first = reports[0], last = reports[reports.length-1];
+
+  const w = window.open('', '_blank');
+  const segLabels = Object.keys(SKILL_SEGMENTS);
+  const rowsHtml = reports.map(r=>`
+    <tr>
+      <td>${miladi2Shamsi(r.date)}</td><td>${r.sessionTime}</td><td>${r.attendance}</td>
+      <td style="font-weight:800;color:${r.totalScore>=80?'#2d7a3a':r.totalScore>=60?'#c4622d':'#c0392b'}">${r.totalScore}</td>
+      <td>${r.mood||''}</td>
+      <td>${(r.focusAreas||[]).join('، ')}</td>
+      <td>${r.progress||''}</td>
+      <td>${r.coachNote||''}</td>
+    </tr>`).join('');
+
+  const segHtml = segLabels.map(seg=>{
+    const vals = reports.map(r=>segmentAverage(r.ratings, SKILL_SEGMENTS[seg]));
+    const segAvg = (vals.reduce((a,v)=>a+v,0)/vals.length).toFixed(1);
+    return `<tr><td>${seg}</td><td style="font-weight:800;">${segAvg} / 5</td></tr>`;
+  }).join('');
+
+  w.document.write(`<!DOCTYPE html><html lang="fa" dir="rtl"><head><meta charset="UTF-8">
+  <title>گزارش ${player.name}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;}
+    body{font-family:'Vazirmatn',sans-serif;direction:rtl;padding:2rem;color:#2a1509;}
+    h1{font-size:1.4rem;color:#c4622d;margin-bottom:.2rem;}
+    .sub{color:#8a7a6e;font-size:.85rem;margin-bottom:1.5rem;}
+    .stats{display:flex;gap:1rem;margin-bottom:1.5rem;}
+    .stat{flex:1;background:#f8f5f2;border-radius:8px;padding:1rem;text-align:center;}
+    .stat .n{font-size:1.6rem;font-weight:800;color:#c4622d;}
+    .stat .l{font-size:.72rem;color:#8a7a6e;margin-top:.3rem;}
+    table{width:100%;border-collapse:collapse;font-size:.78rem;margin-bottom:1.5rem;}
+    th,td{border:1px solid #e8e0d8;padding:.5rem .6rem;text-align:right;}
+    th{background:#1a0d06;color:#f5efe6;}
+    h2{font-size:1rem;color:#1a0d06;margin-bottom:.6rem;border-right:4px solid #c4622d;padding-right:.6rem;}
+    .footer{text-align:center;color:#8a7a6e;font-size:.75rem;margin-top:2rem;}
+    @media print{ .no-print{display:none;} }
+  </style></head><body>
+  <h1>🎾 گزارش پیشرفت — ${player.name}</h1>
+  <div class="sub">SLR Tennis Academy &middot; بازه: ${periodLabel} &middot; از ${miladi2Shamsi(first.date)} تا ${miladi2Shamsi(last.date)} &middot; سطح: ${player.level}</div>
+  <div class="stats">
+    <div class="stat"><div class="n">${reports.length}</div><div class="l">تعداد جلسات</div></div>
+    <div class="stat"><div class="n">${avg}</div><div class="l">میانگین نمره (از ۱۰۰)</div></div>
+    <div class="stat"><div class="n">${last.totalScore}</div><div class="l">آخرین نمره</div></div>
+  </div>
+  <h2>میانگین سگمنت‌ها در این بازه</h2>
+  <table><tr><th>سگمنت</th><th>میانگین</th></tr>${segHtml}</table>
+  <h2>جزئیات جلسات</h2>
+  <table>
+    <tr><th>تاریخ</th><th>ساعت</th><th>حضور</th><th>نمره</th><th>حال بازیکن</th><th>موضوع تمرین</th><th>پیشرفت</th><th>پیام به والدین</th></tr>
+    ${rowsHtml}
+  </table>
+  <div class="footer">SLR Tennis Academy — این گزارش به صورت خودکار تولید شده است</div>
+  <div class="no-print" style="text-align:center;margin-top:1rem;">
+    <button onclick="window.print()" style="background:#c4622d;color:#fff;border:none;border-radius:8px;padding:.8rem 2rem;font-family:'Vazirmatn',sans-serif;font-size:.9rem;cursor:pointer;">🖨️ پرینت / ذخیره PDF</button>
+  </div>
+  </body></html>`);
+  w.document.close();
+  setTimeout(()=>w.print(), 400);
+}
+
+// ════════════════════════════════════════
+// AI COACH ASSISTANT — NEXT SESSION SUGGESTION
+// ════════════════════════════════════════
+async function generateCoachSuggestion(playerId){
+  const box = document.getElementById('aiSuggestionBox');
+  const player = getPlayers().find(p=>p.id===playerId);
+  const reports = getReports().filter(r=>r.playerId===playerId).slice().sort((a,b)=>dateToMiladi(a.date)-dateToMiladi(b.date));
+
+  const header = `<div class="sec-divider" style="margin-top:.5rem;">🎯 پیشنهاد دستیار مربی برای این جلسه</div>`;
+
+  if(!reports.length){
+    box.innerHTML = `${header}<div style="background:#f8f5f2;border-radius:8px;padding:.9rem;font-size:.82rem;color:var(--gray);">برای این بازیکن هنوز گزارشی ثبت نشده، پس پیشنهاد ویژه‌ای موجود نیست. بعد از ثبت اولین گزارش، از جلسه بعد پیشنهادها نمایش داده می‌شود.</div>`;
+    return;
+  }
+
+  box.innerHTML = `${header}<div style="text-align:center;padding:1rem;color:var(--gray);font-size:.85rem;">🎾 در حال تحلیل سابقه ${player.name}...</div>`;
+
+  const recent = reports.slice(-6);
+  const segLabels = Object.keys(SKILL_SEGMENTS);
+  const historyText = recent.map(r=>{
+    const segs = segLabels.map(seg=>`${seg}: ${segmentAverage(r.ratings, SKILL_SEGMENTS[seg])}/5`).join('، ');
+    return `تاریخ ${miladi2Shamsi(r.date)} | نمره کلی ${r.totalScore}/100 | حضور: ${r.attendance} | حال: ${r.mood} | سگمنت‌ها → ${segs} | تمرکز جلسه: ${(r.focusAreas||[]).join('، ')||'-'} | پیشرفت: ${r.progress||'-'} | چالش: ${r.challenge||'-'}`;
+  }).join('\n');
+
+  const prompt = `تو یک مربی فوق‌حرفه‌ای و باتجربه تنیس هستی که به عنوان دستیار مربیان آکادمی SLR کار می‌کنی.
+اطلاعات بازیکن:
+نام: ${player.name}، سن: ${player.age}، سطح: ${player.level}
+
+سابقه ${recent.length} جلسه اخیر (قدیمی به جدید):
+${historyText}
+
+بر اساس این سابقه، یک پیشنهاد برای جلسه بعدی (همین جلسه‌ای که مربی الان می‌خواهد برگزار کند) بده شامل:
+1. مهم‌ترین ۲ تا ۳ موضوع تمرینی که باید روی آن‌ها تمرکز شود و چرا (با توجه به نقاط ضعف و روند نزولی/صعودی)
+2. برای هر موضوع، یک تمرین مشخص و قابل اجرا (با توضیح کوتاه نحوه اجرا، تعداد تکرار/زمان تقریبی)
+3. یک نکته درباره حالت روحی/انگیزشی بازیکن بر اساس روند اخیر
+
+پاسخ را کوتاه، عملی و به فارسی، با فرمت بولت‌وار و بدون مقدمه اضافه بنویس.`;
+
+  try{
+    const response = await fetch("/api/coach-suggestion", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt })
+    });
+    const data = await response.json();
+    if (data.error) throw new Error(data.error);
+    const text = data.text || '';
+    if(!text) throw new Error('empty');
+    box.innerHTML = `${header}
+      <div style="background:#fdf0ea;border:1px solid #f0c0a0;border-radius:8px;padding:1.2rem;font-size:.85rem;line-height:1.9;white-space:pre-wrap;">${text.replace(/</g,'&lt;')}</div>
+      <div style="text-align:left;margin-top:.6rem;">
+        <button class="submit-btn" style="font-size:.75rem;padding:.4rem 1rem;background:var(--lightgray);color:var(--gray);" onclick="generateCoachSuggestion('${playerId}')">🔄 پیشنهاد جدید</button>
+      </div>`;
+  }catch(e){
+    box.innerHTML = `${header}
+      <div class="alert alert-err show" style="margin-bottom:.6rem;">⚠️ خطا در دریافت پیشنهاد. لطفاً دوباره تلاش کنید.</div>
+      <button class="submit-btn" style="font-size:.8rem;padding:.5rem 1.2rem;" onclick="generateCoachSuggestion('${playerId}')">✨ تلاش دوباره</button>`;
+  }
+}
+
+
+function showReport(id){
+  const r = getReports().find(x=>x.id===id);
+  if(!r) return;
+  const skillNames = SKILL_NAMES_MAP;
+  const stars = n => '★'.repeat(n)+'☆'.repeat(5-n);
+  const segLabels = Object.keys(SKILL_SEGMENTS);
+  const segValues = segLabels.map(seg=>segmentAverage(r.ratings, SKILL_SEGMENTS[seg]));
+  document.getElementById('reportModalContent').innerHTML = `
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">📋 گزارش ارزیابی — ${r.playerName}</div>
+        <div style="font-size:.75rem;color:var(--gray);margin-top:.2rem;">مربی: ${r.coachName} · ${miladi2Shamsi(r.date)} · ${r.sessionTime}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <div style="text-align:center;">
+          <div style="font-size:2.5rem;font-weight:800;color:${r.totalScore>=80?'#2d7a3a':r.totalScore>=60?'var(--clay)':'#c0392b'}">${r.totalScore}</div>
+          <div style="font-size:.65rem;color:var(--gray);">از ۱۰۰</div>
+        </div>
+        <button class="modal-close" onclick="document.getElementById('reportModal').classList.remove('on')">✕</button>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-bottom:1.5rem;">
+      <div style="background:#f8f5f2;border-radius:8px;padding:.8rem;text-align:center;">
+        <div style="font-size:.65rem;color:var(--gray);">سطح</div>
+        <div style="font-weight:700;font-size:.85rem;">${r.playerLevel}</div>
+      </div>
+      <div style="background:#f8f5f2;border-radius:8px;padding:.8rem;text-align:center;">
+        <div style="font-size:.65rem;color:var(--gray);">حضور</div>
+        <div style="font-weight:700;font-size:.85rem;">${r.attendance}</div>
+      </div>
+      <div style="background:#f8f5f2;border-radius:8px;padding:.8rem;text-align:center;">
+        <div style="font-size:.65rem;color:var(--gray);">حال بازیکن</div>
+        <div style="font-weight:700;font-size:.85rem;">${r.mood}</div>
+      </div>
+    </div>
+
+    ${r.focusAreas?.length?`<div style="margin-bottom:1.2rem;"><div style="font-size:.72rem;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:.5rem;">موضوع تمرین:</div><div class="rc-skills">${r.focusAreas.map(f=>`<span class="skill-pill">${f}</span>`).join('')}</div></div>`:''}
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.2rem;">
+      <div style="background:#f8f5f2;border-radius:8px;padding:.8rem;">
+        <div style="font-size:.72rem;font-weight:700;color:var(--clay);letter-spacing:1px;margin-bottom:.5rem;text-align:center;">نمودار سگمنت‌ها</div>
+        <canvas id="segChart" height="220"></canvas>
+      </div>
+      <div style="background:#f8f5f2;border-radius:8px;padding:.8rem;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <div style="font-size:.72rem;font-weight:700;color:var(--clay);letter-spacing:1px;margin-bottom:.5rem;text-align:center;">نمره کلی</div>
+        <canvas id="overallChart" height="220"></canvas>
+      </div>
+    </div>
+
+
+    <div style="margin-bottom:1.2rem;">
+      <div style="font-size:.72rem;font-weight:700;color:var(--clay);letter-spacing:1px;margin-bottom:.8rem;">ارزیابی تکنیکی:</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.2rem 2rem;">
+        ${Object.entries(r.ratings||{}).map(([k,v])=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid #f0ece3;">
+            <span style="font-size:.78rem;color:#3a2010;">${skillNames[k]||k}</span>
+            <span style="color:var(--gold);font-size:.9rem;letter-spacing:1px;">${stars(v)}</span>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    ${r.progress?`<div style="background:#edfaf0;border-radius:8px;padding:1rem;margin-bottom:.8rem;"><div style="font-size:.7rem;font-weight:700;color:#2d7a3a;margin-bottom:.3rem;">✅ پیشرفت این جلسه:</div><div style="font-size:.85rem;">${r.progress}</div></div>`:''}
+    ${r.challenge?`<div style="background:#fdf0ea;border-radius:8px;padding:1rem;margin-bottom:.8rem;"><div style="font-size:.7rem;font-weight:700;color:var(--clay);margin-bottom:.3rem;">⚠️ چالش اصلی:</div><div style="font-size:.85rem;">${r.challenge}</div></div>`:''}
+    ${r.homework?`<div style="background:#f8f5f2;border-radius:8px;padding:1rem;margin-bottom:.8rem;"><div style="font-size:.7rem;font-weight:700;color:var(--gray);margin-bottom:.3rem;">📚 تمرین خانگی:</div><div style="font-size:.85rem;">${r.homework}</div></div>`:''}
+    ${r.coachNote?`<div style="background:#fdf8e8;border-radius:8px;padding:1rem;margin-bottom:.8rem;border:1px solid #e8d890;"><div style="font-size:.7rem;font-weight:700;color:#8a6a10;margin-bottom:.3rem;">💬 پیام به والدین:</div><div style="font-size:.85rem;">${r.coachNote}</div></div>`:''}
+    <div style="background:#f8f5f2;border-radius:8px;padding:.8rem;font-size:.82rem;color:var(--gray);">ارتقاء سطح: <strong style="color:var(--dark);">${r.upgrade}</strong></div>
+    <div style="text-align:center;margin-top:1.5rem;" class="no-print">
+      <button class="submit-btn" style="font-size:.8rem;padding:.6rem 1.5rem;" onclick="window.print()">🖨️ پرینت / ذخیره PDF</button>
+    </div>`;
+  document.getElementById('reportModal').classList.add('on');
+  setTimeout(()=>renderReportCharts(segLabels, segValues, r.totalScore), 50);
+}
+
+function renderReportCharts(segLabels, segValues, totalScore){
+  if(window._segChart) window._segChart.destroy();
+  if(window._overallChart) window._overallChart.destroy();
+  const segCtx = document.getElementById('segChart');
+  const ovCtx = document.getElementById('overallChart');
+  if(!segCtx || !ovCtx || typeof Chart==='undefined') return;
+  window._segChart = new Chart(segCtx, {
+    type:'radar',
+    data:{
+      labels: segLabels,
+      datasets:[{
+        label:'میانگین (از ۵)',
+        data: segValues,
+        backgroundColor:'rgba(196,98,45,.2)',
+        borderColor:'#c4622d',
+        pointBackgroundColor:'#c4622d',
+        borderWidth:2,
+      }]
+    },
+    options:{
+      scales:{ r:{ min:0, max:5, ticks:{stepSize:1}, pointLabels:{font:{family:'Vazirmatn', size:11}} } },
+      plugins:{ legend:{display:false} }
+    }
+  });
+  const scoreColor = totalScore>=80?'#2d7a3a':totalScore>=60?'#c4622d':'#c0392b';
+  window._overallChart = new Chart(ovCtx, {
+    type:'doughnut',
+    data:{
+      labels:['نمره','باقی‌مانده'],
+      datasets:[{ data:[totalScore, 100-totalScore], backgroundColor:[scoreColor,'#f0ece3'], borderWidth:0 }]
+    },
+    options:{
+      cutout:'72%',
+      plugins:{
+        legend:{display:false},
+        tooltip:{enabled:false}
+      }
+    },
+    plugins:[{
+      id:'centerText',
+      afterDraw(chart){
+        const {ctx, chartArea:{width,height,left,top}} = chart;
+        ctx.save();
+        ctx.font = '800 1.8rem Vazirmatn, sans-serif';
+        ctx.fillStyle = scoreColor;
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(totalScore, left+width/2, top+height/2-8);
+        ctx.font='600 .7rem Vazirmatn, sans-serif';
+        ctx.fillStyle='#8a7a6e';
+        ctx.fillText('از ۱۰۰', left+width/2, top+height/2+16);
+        ctx.restore();
+      }
+    }]
+  });
+}
+
+// ════════════════════════════════════════
+// MANAGE COACHES (admin)
+// ════════════════════════════════════════
+function getCoachesDyn(){
+  const s = localStorage.getItem('slr_coaches_dyn');
+  return s ? JSON.parse(s) : [
+    {id:'c1', name:'علی رضایی',  specialty:'تکنیک پایه',       email:'ali@slr.ir',  pass:'Ali2024'},
+    {id:'c2', name:'سارا محمدی', specialty:'سرویس · زمین خاک', email:'sara@slr.ir', pass:'Sara2024'},
+    {id:'c3', name:'کیان احمدی', specialty:'جوانان · فیزیک',   email:'kian@slr.ir', pass:'Kian2024'},
+  ];
+}
+function saveCoachesDyn(c){ localStorage.setItem('slr_coaches_dyn',JSON.stringify(c)); }
+
+// Sync dynamic coaches into USERS at runtime
+function syncCoachUsers(){
+  const coaches = getCoachesDyn();
+  coaches.forEach(c=>{
+    USERS[c.email] = {pass:c.pass, role:'coach', name:c.name, coachId:c.id};
+    COACHES[c.id]  = {name:c.name, specialty:c.specialty};
+  });
+}
+syncCoachUsers();
+
+function renderManageCoaches(){
+  const coaches = getCoachesDyn();
+  const reports = getReports();
+  document.getElementById('mainContent').innerHTML = `
+  <div class="section-header">
+    <div class="section-title">👨‍🏫 مدیریت مربیان</div>
+    <button class="submit-btn" style="font-size:.8rem;padding:.6rem 1.2rem;" onclick="showAddCoach()">+ افزودن مربی جدید</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;" id="coachCards">
+    ${coaches.map(c=>{
+      const cnt = reports.filter(r=>r.coachId===c.id).length;
+      return `<div class="card" style="border-top:3px solid var(--clay2);">
+        <div style="display:flex;align-items:center;gap:.8rem;margin-bottom:1rem;">
+          <div style="width:46px;height:46px;border-radius:50%;background:var(--clay2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:white;font-weight:800;flex-shrink:0;">${c.name[0]}</div>
+          <div style="flex:1">
+            <div style="font-weight:800;font-size:.95rem;">${c.name}</div>
+            <div style="font-size:.72rem;color:var(--gray);">${c.specialty}</div>
+          </div>
+        </div>
+        <div style="font-size:.78rem;color:var(--gray);margin-bottom:.4rem;">📧 ${c.email}</div>
+        <div style="font-size:.78rem;color:var(--gray);margin-bottom:.8rem;">🔑 رمز: <span style="font-family:monospace;background:#f0ece3;padding:.1rem .4rem;border-radius:4px;">${c.pass}</span></div>
+        <div style="font-size:.78rem;color:var(--gray);margin-bottom:1rem;">📋 ${cnt} گزارش ثبت شده</div>
+        <div style="display:flex;gap:.5rem;">
+          <button onclick="editCoach('${c.id}')" style="flex:1;background:#fdf0ea;border:1px solid #f0c0a0;color:var(--clay);border-radius:6px;padding:.5rem;font-family:'Vazirmatn',sans-serif;font-size:.78rem;cursor:pointer;">✏️ ویرایش</button>
+          <button onclick="deleteCoach('${c.id}')" style="background:#fdecea;border:1px solid #f5b8b0;color:#c0392b;border-radius:6px;padding:.5rem .8rem;font-family:'Vazirmatn',sans-serif;font-size:.78rem;cursor:pointer;">🗑️</button>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function showAddCoach(editId){
+  const coaches = getCoachesDyn();
+  const ec = editId ? coaches.find(c=>c.id===editId) : null;
+  const modal = document.getElementById('reportModal');
+  document.getElementById('reportModalContent').innerHTML = `
+    <div class="modal-header">
+      <div class="modal-title">${ec?'✏️ ویرایش مربی':'➕ افزودن مربی جدید'}</div>
+      <button class="modal-close" onclick="document.getElementById('reportModal').classList.remove('on')">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label>نام کامل *</label><input id="nc-name" type="text" value="${ec?ec.name:''}" placeholder="نام و نام خانوادگی مربی"></div>
+      <div class="form-group"><label>تخصص</label><input id="nc-spec" type="text" value="${ec?ec.specialty:''}" placeholder="مثال: فورهند، جوانان..."></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label>ایمیل ورود *</label><input id="nc-email" type="email" value="${ec?ec.email:''}" placeholder="coach@slr.ir" dir="ltr" style="text-align:left"></div>
+      <div class="form-group"><label>رمز عبور *</label><input id="nc-pass" type="text" value="${ec?ec.pass:''}" placeholder="حداقل ۶ کاراکتر" dir="ltr" style="text-align:left"></div>
+    </div>
+    <div style="background:#fdf8e8;border:1px solid #e8d890;border-radius:8px;padding:.8rem;font-size:.78rem;color:#8a6a10;margin-bottom:1rem;">
+      💡 ایمیل و رمز عبور را به مربی بدهید تا با آن وارد سیستم شود
+    </div>
+    <button class="submit-btn" onclick="saveCoach('${editId||''}')">💾 ذخیره مربی</button>`;
+  modal.classList.add('on');
+}
+
+function editCoach(id){ showAddCoach(id); }
+
+function saveCoach(editId){
+  const name  = document.getElementById('nc-name').value.trim();
+  const spec  = document.getElementById('nc-spec').value.trim();
+  const email = document.getElementById('nc-email').value.trim();
+  const pass  = document.getElementById('nc-pass').value.trim();
+  if(!name||!email||!pass){alert('نام، ایمیل و رمز عبور الزامی است');return;}
+  const coaches = getCoachesDyn();
+  if(editId){
+    const idx = coaches.findIndex(c=>c.id===editId);
+    if(idx>-1){ coaches[idx] = {...coaches[idx], name, specialty:spec, email, pass}; }
+  } else {
+    const newId = 'c'+Date.now();
+    coaches.push({id:newId, name, specialty:spec||'مربی', email, pass});
+  }
+  saveCoachesDyn(coaches);
+  syncCoachUsers();
+  document.getElementById('reportModal').classList.remove('on');
+  renderManageCoaches();
+}
+
+function deleteCoach(id){
+  if(!confirm('آیا مطمئن هستید؟ این مربی از سیستم حذف می‌شود.')) return;
+  const coaches = getCoachesDyn().filter(c=>c.id!==id);
+  saveCoachesDyn(coaches);
+  syncCoachUsers();
+  renderManageCoaches();
+}
+
+// ════════════════════════════════════════
+// GUIDE (admin only - keep for admin nav if needed)
+// ════════════════════════════════════════
+function renderGuide(){
+  const isAdmin = currentUser.role === 'admin';
+  const html = `
+  <div class="card">
+    <div class="card-title"><span class="ico">📖</span> ${isAdmin?'دستورالعمل جامع مدیریت آکادمی':'راهنمای مربی'}</div>
+
+    ${isAdmin ? `
+    <div class="sec-divider">بخش ۱ — قوانین طلایی مدیریت</div>
+    <div style="display:flex;flex-direction:column;gap:.8rem;margin-bottom:1.5rem;">
+      ${[
+        ['۱','هر چیزی که دوبار تکرار می‌شود، سیستمش کن','اگه هر هفته یه سوال تکراری جواب میدی، یه PDF بساز و بفرست'],
+        ['۲','بد خبر را زود بده','اگه کلاس لغو شد، زمین خراب شد — فوری اطلاع بده. دیر خبر دادن اعتماد را می‌کشد'],
+        ['۳','قول کمتر بده، بیشتر عمل کن','هیچ‌وقت چیزی نگو که صد در صد مطمئن نیستی'],
+        ['۴','با همه یه جور رفتار کن','استثنا نشان دادن زهر مدیریت است'],
+        ['۵','هر تصمیم مهم را بنویس','حتی یه پیام واتساپ. هر چیزی شفاهی ماند، فراموش می‌شود'],
+        ['۶','مشکل را در همان روز حل کن','مشکل یک‌روزه که حل نشه، هفته بعد سه برابر بزرگ‌تره'],
+      ].map(([n,t,d])=>`<div style="display:flex;gap:1rem;align-items:flex-start;background:#f8f5f2;border-radius:8px;padding:1rem;">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--clay2);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0;">${n}</div>
+        <div><div style="font-weight:700;font-size:.88rem;margin-bottom:.2rem;">${t}</div><div style="font-size:.8rem;color:var(--gray);">${d}</div></div>
+      </div>`).join('')}
+    </div>
+
+    <div class="sec-divider">بخش ۲ — مدیریت مربیان</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+      <div style="background:#edfaf0;border:1px solid #b8e8c0;border-radius:8px;padding:1rem;">
+        <div style="font-weight:800;color:#2d7a3a;margin-bottom:.8rem;">✅ بایدها</div>
+        ${['از روز اول قرارداد کتبی با هر مربی داشته باش','جلسه هفتگی ۳۰ دقیقه‌ای با مربیان','برای هر مربی شرح وظیفه مشخص بنویس','مجوز فدراسیون از همه مربیان بخواه'].map(i=>`<div style="font-size:.8rem;margin-bottom:.4rem;">• ${i}</div>`).join('')}
+      </div>
+      <div style="background:#fdecea;border:1px solid #f5b8b0;border-radius:8px;padding:1rem;">
+        <div style="font-weight:800;color:#c0392b;margin-bottom:.8rem;">❌ نبایدها</div>
+        ${['جلوی بازیکنان با مربی بحث نکن','اجازه نده مربیان بازیکنان را خارج از باشگاه کلاس بدن','بین مربیان فرق آشکار نذار','مشکل را با سکوت حل کنی'].map(i=>`<div style="font-size:.8rem;margin-bottom:.4rem;">• ${i}</div>`).join('')}
+      </div>
+    </div>
+
+    <div class="sec-divider">بخش ۳ — مدیریت مالی</div>
+    <div style="background:#fdf8e8;border:1px solid #e8d890;border-radius:8px;padding:1rem;margin-bottom:1.5rem;">
+      <div style="font-weight:800;color:#8a6a10;margin-bottom:.8rem;">💰 قانون طلایی مالی: هیچ کلاسی بدون پرداخت ندارد</div>
+      ${['پرداخت تا پنجم هر ماه — از ششم کلاس متوقف است','هیچ پولی بدون رسید دریافت نکن','پول شخصی‌ات را با پول باشگاه قاطی نکن','هزینه‌های ثابت ماهانه را حفظ کن: اجاره + حقوق + بیمه','گزارش مالی ساده هر ماه بساز'].map(i=>`<div style="font-size:.8rem;margin-bottom:.4rem;display:flex;gap:.5rem;">• ${i}</div>`).join('')}
+    </div>
+
+    <div class="sec-divider">بخش ۴ — مدیریت والدین</div>
+    <div style="margin-bottom:1.5rem;">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
+        ${[
+          ['✅ والد حمایتگر','#edfaf0','#2d7a3a','از فرزند حمایت می‌کنه، به مربی اعتماد داره. گزارش منظم بده، از او به عنوان سفیر استفاده کن'],
+          ['⚠️ والد مضطرب','#fdf8e8','#8a6a10','مدام می‌پرسه، نگرانه. جلسه ماهانه باهاشون داشته باش، اعداد و پیشرفت نشون بده'],
+          ['🚨 والد دخالتگر','#fdecea','#c0392b','به مربی می‌گه چطور تدریس کنه. از اول قانون بذار: داخل زمین فقط مربی صحبت می‌کنه'],
+        ].map(([t,bg,c,d])=>`<div style="background:${bg};border-radius:8px;padding:1rem;">
+          <div style="font-weight:800;color:${c};margin-bottom:.5rem;">${t}</div>
+          <div style="font-size:.78rem;">${d}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="sec-divider">بخش ۵ — مسئولیت قانونی</div>
+    <div style="display:flex;flex-direction:column;gap:.6rem;margin-bottom:1.5rem;">
+      ${[
+        ['رضایت‌نامه','از همه بازیکنان و والدین بچه‌ها رضایت‌نامه کتبی بگیر','🔴 فوری'],
+        ['مجوز مربیان','همه مربیان باید کارت فدراسیون تنیس داشته باشند','🔴 فوری'],
+        ['دوربین مداربسته','در ورودی و محوطه نصب کن','🟠 مهم'],
+        ['بیمه مسئولیت مدنی','سالانه ۵-۱۵ میلیون، در برابر دعوای حقوقی محافظت می‌کند','🟠 مهم'],
+        ['بیمه تامین اجتماعی','مربیان باید بیمه باشند وگرنه جریمه سنگین','🟡 لازم'],
+        ['قرارداد با صاحب باشگاه','درصد، پایه درآمد، مسئولیت‌ها — همه کتبی','🔴 فوری'],
+      ].map(([t,d,badge])=>`<div style="display:flex;gap:1rem;align-items:flex-start;background:#f8f5f2;border-radius:8px;padding:.8rem;">
+        <span style="font-size:.72rem;white-space:nowrap;">${badge}</span>
+        <div><div style="font-weight:700;font-size:.85rem;">${t}</div><div style="font-size:.78rem;color:var(--gray);margin-top:.2rem;">${d}</div></div>
+      </div>`).join('')}
+    </div>
+
+    <div class="sec-divider">بخش ۶ — چک‌لیست هفتگی مدیر</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1rem;">
+      ${[
+        ['شنبه صبح (۲۰ دقیقه)','بررسی برنامه هفته، تایم‌های خالی، بازیکنانی که دو هفته نیامدند — زنگ بزن'],
+        ['سه‌شنبه (۱۰ دقیقه)','چک پرداخت‌ها، پیگیری بدهکارها با پیام مؤدبانه'],
+        ['پنجشنبه (۳۰ دقیقه)','جلسه مربیان، مشکلات هفته، برنامه هفته بعد'],
+      ].map(([t,d])=>`<div style="background:#f8f5f2;border-radius:8px;padding:1rem;">
+        <div style="font-weight:700;color:var(--clay);font-size:.82rem;margin-bottom:.5rem;">${t}</div>
+        <div style="font-size:.78rem;color:var(--gray);">${d}</div>
+      </div>`).join('')}
+    </div>
+    ` : `
+    <!-- COACH GUIDE -->
+    <div class="sec-divider">وظایف شما به عنوان مربی</div>
+    <div style="display:flex;flex-direction:column;gap:.8rem;margin-bottom:1.5rem;">
+      ${[
+        ['هر جلسه','گزارش ارزیابی بازیکن را در همین سیستم ثبت کنید','۵ دقیقه'],
+        ['هر هفته','هشدارهای فوری (غیبت، بی‌انگیزگی، دعوا) را به مدیر اطلاع بدهید','۵ دقیقه'],
+        ['هر ماه','گزارش کامل ماهانه برای هر بازیکن — جلسه ۱۵ دقیقه‌ای با مدیر','۱۵ دقیقه'],
+      ].map(([t,d,time])=>`<div style="display:flex;gap:1rem;align-items:flex-start;background:#f8f5f2;border-radius:8px;padding:1rem;">
+        <div style="background:var(--clay2);color:white;border-radius:6px;padding:.3rem .7rem;font-size:.72rem;font-weight:700;white-space:nowrap;">${t}</div>
+        <div style="flex:1"><div style="font-size:.85rem;">${d}</div></div>
+        <div style="font-size:.72rem;color:var(--gray);white-space:nowrap;">${time}</div>
+      </div>`).join('')}
+    </div>
+
+    <div class="sec-divider">نکات مهم در ارزیابی</div>
+    ${[
+      'صادق باشید — گزارش دقیق به پیشرفت واقعی بازیکن کمک می‌کند',
+      'برای کودکان لحن انگیزه‌بخش استفاده کنید',
+      'اگه بازیکن دو جلسه متوالی غیبت کرد — همان روز به مدیر خبر بده',
+      'پیام به والدین باید گرم و مثبت باشد حتی اگه نکات اصلاحی داره',
+      'نمره‌دهی باید واقعی باشد — نه خیلی سخت‌گیرانه نه تعارف‌آمیز',
+    ].map(i=>`<div style="display:flex;gap:.5rem;font-size:.83rem;margin-bottom:.6rem;"><span>✦</span><span>${i}</span></div>`).join('')}
+    `}
+  </div>`;
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+document.getElementById('loginScreen').style.display = 'flex';
+document.getElementById('app').style.display = 'none';
+
+// نمایش تاریخ شمسی امروز در صفحه لاگین
+document.addEventListener('DOMContentLoaded', function() {
+  const d = document.getElementById('todayDateDisplay');
+  if (d) d.textContent = todayShamsiReadable();
+});
+
+// live preview تاریخ شمسی
+document.addEventListener('input', function(e) {
+  if (e.target && e.target.id === 'r-date') {
+    const val = e.target.value;
+    const prev = document.getElementById('datePreview');
+    if (prev && val.match(/^\d{4}-\d{1,2}-\d{1,2}$/)) {
+      prev.textContent = '📅 ' + miladi2Shamsi(val);
+      prev.style.color = 'var(--clay)';
+    } else if (prev) {
+      prev.textContent = '';
+    }
+  }
+});
+</script>
+</body>
+</html>
