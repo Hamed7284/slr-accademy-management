@@ -408,18 +408,26 @@ const PLAYERS_DEFAULT = [
 function getPlayers(){
   if(_players !== null) return _players;
   const s = localStorage.getItem('cache_slr_players');
-  return s ? JSON.parse(s) : PLAYERS_DEFAULT;
+  _players = s ? JSON.parse(s) : PLAYERS_DEFAULT;
+  return _players;
 }
 function savePlayers(p){
   _players = p;
+  localStorage.setItem('cache_slr_players', JSON.stringify(p));
   kvSet('slr_players', p);
 }
 
 function getReports(){
-  const s = localStorage.getItem('slr_reports');
-  return s ? JSON.parse(s) : [];
+  if(_reports !== null) return _reports;
+  const s = localStorage.getItem('cache_slr_reports');
+  _reports = s ? JSON.parse(s) : REPORTS_DEFAULT;
+  return _reports;
 }
-function saveReports(r){ localStorage.setItem('slr_reports',JSON.stringify(r)); }
+function saveReports(r){
+  _reports = r;
+  localStorage.setItem('cache_slr_reports', JSON.stringify(r));
+  kvSet('slr_reports', r);
+}
 
 // ════════════════════════════════════════
 // SKILL SEGMENTS (for charts)
@@ -1874,14 +1882,16 @@ function renderReportCharts(segLabels, segValues, totalScore){
 function getCoachesDyn(){
   if(_coaches !== null) return _coaches;
   const s = localStorage.getItem('cache_slr_coaches_dyn');
-  return s ? JSON.parse(s) : [
+  _coaches = s ? JSON.parse(s) : [
     {id:'c1', name:'علی رضایی',  specialty:'تکنیک پایه',       email:'ali@slr.ir',  pass:'Ali2024'},
     {id:'c2', name:'سارا محمدی', specialty:'سرویس · زمین خاک', email:'sara@slr.ir', pass:'Sara2024'},
     {id:'c3', name:'کیان احمدی', specialty:'جوانان · فیزیک',   email:'kian@slr.ir', pass:'Kian2024'},
   ];
+  return _coaches;
 }
 function saveCoachesDyn(c){
   _coaches = c;
+  localStorage.setItem('cache_slr_coaches_dyn', JSON.stringify(c));
   kvSet('slr_coaches_dyn', c);
 }
 
