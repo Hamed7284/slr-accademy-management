@@ -309,7 +309,72 @@ tbody td{padding:.75rem 1rem;color:#2a1509;vertical-align:middle;}
 
 <script>
 // ════════════════════════════════════════
-// DATA STORE (localStorage-backed)
+function showLoading(){
+  let el = document.getElementById('globalLoader');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'globalLoader';
+    el.setAttribute('style','position:fixed;inset:0;background:rgba(26,13,6,.7);z-index:99998;display:flex;align-items:center;justify-content:center;');
+    el.innerHTML = '<div style="background:#fff;border-radius:12px;padding:2rem 2.5rem;text-align:center;font-family:Vazirmatn,Tahoma,sans-serif;"><div style="font-size:2rem;margin-bottom:.8rem;">⏳</div><div style="font-size:.9rem;color:#555;">در حال بارگذاری اطلاعات...</div></div>';
+    document.body.appendChild(el);
+  }
+  el.style.display = 'flex';
+}
+function hideLoading(){
+  const el = document.getElementById('globalLoader');
+  if(el) el.style.display = 'none';
+}
+
+// ════════════════════════════════════════
+// DATA STORE — Cloudflare KV (shared database)
+// localStorage used as cache only
+// ════════════════════════════════════════
+
+// Generic KV read/write via Pages Function
+async function kvGet(key) {
+  try {
+    const r = await fetch('/api/db?key=' + encodeURIComponent(key));
+    const d = await r.json();
+    return d.value;
+  } catch(e) {
+    // fallback to localStorage cache
+    const s = localStorage.getItem('cache_' + key);
+    return s ? JSON.parse(s) : null;
+  }
+}
+async function kvSet(key, value) {
+  // update localStorage cache immediately
+  localStorage.setItem('cache_' + key, JSON.stringify(value));
+  try {
+    await fetch('/api/db', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({key, value})
+    });
+  } catch(e) {
+    console.warn('KV write failed, data saved in local cache only:', e.message);
+  }
+}
+
+// Sync wrappers — load from KV on app start, write-through on save
+let _players = null, _reports = null, _coaches = null;
+
+async function loadAllData() {
+  const [p, r, c] = await Promise.all([
+    kvGet('slr_players'),
+    kvGet('slr_reports'),
+    kvGet('slr_coaches_dyn'),
+  ]);
+  _players = p || PLAYERS_DEFAULT;
+  _reports = r || REPORTS_DEFAULT;
+  _coaches = c || COACHES_DEFAULT;
+  // seed localStorage cache
+  localStorage.setItem('cache_slr_players', JSON.stringify(_players));
+  localStorage.setItem('cache_slr_reports', JSON.stringify(_reports));
+  localStorage.setItem('cache_slr_coaches_dyn', JSON.stringify(_coaches));
+}
+
+// DATA STORE (KV-backed with localStorage cache)
 // ════════════════════════════════════════
 
 const USERS = {
@@ -337,10 +402,14 @@ const PLAYERS_DEFAULT = [
 ];
 
 function getPlayers(){
-  const s = localStorage.getItem('slr_players');
+  if(_players !== null) return _players;
+  const s = localStorage.getItem('cache_slr_players');
   return s ? JSON.parse(s) : PLAYERS_DEFAULT;
 }
-function savePlayers(p){ localStorage.setItem('slr_players',JSON.stringify(p)); }
+function savePlayers(p){
+  _players = p;
+  kvSet('slr_players', p);
+}
 
 function getReports(){
   const s = localStorage.getItem('slr_reports');
@@ -562,7 +631,8 @@ function doLogin(){
       err.style.display = 'none';
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('app').style.display = 'block';
-      initApp();
+      showLoading();
+      loadAllData().then(()=>{ hideLoading(); initApp(); });
     } else {
       err.style.display = 'block';
     }
@@ -578,7 +648,8 @@ function doLogin(){
     err.style.display = 'none';
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
-    initApp();
+    showLoading();
+    loadAllData().then(()=>{ hideLoading(); initApp(); });
   } else {
     err.style.display = 'block';
   }
@@ -1791,14 +1862,18 @@ function renderReportCharts(segLabels, segValues, totalScore){
 // MANAGE COACHES (admin)
 // ════════════════════════════════════════
 function getCoachesDyn(){
-  const s = localStorage.getItem('slr_coaches_dyn');
+  if(_coaches !== null) return _coaches;
+  const s = localStorage.getItem('cache_slr_coaches_dyn');
   return s ? JSON.parse(s) : [
     {id:'c1', name:'علی رضایی',  specialty:'تکنیک پایه',       email:'ali@slr.ir',  pass:'Ali2024'},
     {id:'c2', name:'سارا محمدی', specialty:'سرویس · زمین خاک', email:'sara@slr.ir', pass:'Sara2024'},
     {id:'c3', name:'کیان احمدی', specialty:'جوانان · فیزیک',   email:'kian@slr.ir', pass:'Kian2024'},
   ];
 }
-function saveCoachesDyn(c){ localStorage.setItem('slr_coaches_dyn',JSON.stringify(c)); }
+function saveCoachesDyn(c){
+  _coaches = c;
+  kvSet('slr_coaches_dyn', c);
+}
 
 // Sync dynamic coaches into USERS at runtime
 function syncCoachUsers(){
