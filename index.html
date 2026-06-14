@@ -635,14 +635,11 @@ function doLogin(){
       err.style.display = 'none';
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('app').style.display = 'block';
-      showLoading();
-      // load from cache instantly, then sync from KV in background
       _players = JSON.parse(localStorage.getItem('cache_slr_players')||'null') || PLAYERS_DEFAULT;
       _reports = JSON.parse(localStorage.getItem('cache_slr_reports')||'null') || REPORTS_DEFAULT;
       _coaches = JSON.parse(localStorage.getItem('cache_slr_coaches_dyn')||'null') || COACHES_DEFAULT;
-      hideLoading();
       initApp();
-      loadAllData(); // sync in background silently
+      loadAllData();
     } else {
       err.style.display = 'block';
     }
@@ -658,13 +655,11 @@ function doLogin(){
     err.style.display = 'none';
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
-    showLoading();
     _players = JSON.parse(localStorage.getItem('cache_slr_players')||'null') || PLAYERS_DEFAULT;
     _reports = JSON.parse(localStorage.getItem('cache_slr_reports')||'null') || REPORTS_DEFAULT;
     _coaches = JSON.parse(localStorage.getItem('cache_slr_coaches_dyn')||'null') || COACHES_DEFAULT;
-    hideLoading();
     initApp();
-    loadAllData(); // sync in background silently
+    loadAllData();
   } else {
     err.style.display = 'block';
   }
