@@ -246,15 +246,32 @@ tbody td{padding:.75rem 1rem;color:#2a1509;vertical-align:middle;}
       <span class="ico">🎾</span>
       <h1>SLR Tennis Academy</h1>
       <p>سیستم مدیریت آکادمی</p>
-      <div id="todayDateDisplay" style="font-size:.78rem;color:var(--clay2);font-weight:700;margin-top:.4rem;background:#fdf0ea;border-radius:6px;padding:.3rem .8rem;display:inline-block;"></div>
     </div>
-    <div class="lform-group">
-      <label>ایمیل</label>
-      <input type="email" id="loginEmail" placeholder="email@example.com" dir="ltr" style="text-align:left" onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="lform-group" style="margin-bottom:1.5rem;">
+      <div class="login-tabs">
+        <button class="ltab a" id="ltab-staff" onclick="setLoginTab('staff')">مدیر / مربی</button>
+        <button class="ltab" id="ltab-player" onclick="setLoginTab('player')">بازیکن</button>
+      </div>
     </div>
-    <div class="lform-group">
-      <label>رمز عبور</label>
-      <input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    <div id="staffLoginFields">
+      <div class="lform-group">
+        <label>ایمیل</label>
+        <input type="email" id="loginEmail" placeholder="email@example.com" dir="ltr" style="text-align:left" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="lform-group">
+        <label>رمز عبور</label>
+        <input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+    </div>
+    <div id="playerLoginFields" style="display:none;">
+      <div class="lform-group">
+        <label>شماره موبایل (نام کاربری)</label>
+        <input type="text" id="loginPlayerName" placeholder="09xxxxxxxxx" dir="ltr" style="text-align:left" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="lform-group">
+        <label>رمز عبور</label>
+        <input type="text" id="loginPlayerCode" placeholder="رمز عبور (پیش‌فرض: همان شماره موبایل)" dir="ltr" style="text-align:left" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
     </div>
     <div class="login-err" id="loginErr">❌ ایمیل یا رمز اشتباه است</div>
     <button class="login-btn" onclick="doLogin()">ورود به سیستم</button>
@@ -291,77 +308,6 @@ tbody td{padding:.75rem 1rem;color:#2a1509;vertical-align:middle;}
 </div>
 
 <script>
-// ═══════════════════════════════════════════
-// تبدیل تاریخ میلادی به شمسی (جلالی)
-// ═══════════════════════════════════════════
-// الگوریتم صحیح تبدیل میلادی به شمسی (jalaali-js)
-function toJalali(gy, gm, gd) {
-  var g_y = gy - 1600, g_m = gm - 1, g_d = gd - 1, i;
-  var g_d_no = 365*g_y + Math.floor((g_y+3)/4) - Math.floor((g_y+99)/100) + Math.floor((g_y+399)/400);
-  var gml = [31,28,31,30,31,30,31,31,30,31,30,31];
-  for (i = 0; i < g_m; i++) g_d_no += gml[i];
-  if (g_m > 1 && ((gy%4===0 && gy%100!==0) || gy%400===0)) g_d_no++;
-  g_d_no += g_d;
-  var j_d_no = g_d_no - 79;
-  var j_np = Math.floor(j_d_no / 12053); j_d_no %= 12053;
-  var jy = 979 + 33*j_np + 4*Math.floor(j_d_no/1461);
-  j_d_no %= 1461;
-  if (j_d_no >= 366) { jy += Math.floor((j_d_no-1)/365); j_d_no = (j_d_no-1)%365; }
-  var jml = [31,31,31,31,31,31,30,30,30,30,30,29];
-  for (i = 0; i < 11 && j_d_no >= jml[i]; i++) j_d_no -= jml[i];
-  return [jy, i+1, j_d_no+1];
-}
-// الگوریتم صحیح تبدیل شمسی به میلادی
-function fromJalali(jy, jm, jd) {
-  jy += 1595;
-  var days = -355779 + 365*jy + Math.floor(jy/33)*8 + Math.floor(((jy%33)+3)/4) + 78
-           + jd + (jm < 7 ? (jm-1)*31 : (jm-7)*30 + 186);
-  var gy = 400 * Math.floor(days/146097); days %= 146097;
-  if (days > 36524) { gy += 100*Math.floor(--days/36524); days %= 36524; if (days >= 365) days++; }
-  gy += 4*Math.floor(days/1461); days %= 1461;
-  if (days > 365) { gy += Math.floor((days-1)/365); days = (days-1)%365; }
-  var gd = days + 1;
-  var gml = [0,31,29,31,30,31,30,31,31,30,31,30,31];
-  var gm = 0;
-  for (gm = 0; gd > gml[gm] && gm < 12; gm++) gd -= gml[gm];
-  return [gy, gm, gd];
-}
-function miladi2Shamsi(dateStr) {
-  if (!dateStr) return '';
-  const parts = dateStr.split('-');
-  if (parts.length < 3) return dateStr;
-  const [jy, jm, jd] = toJalali(parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]));
-  const months = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
-  return jd + ' ' + months[jm-1] + ' ' + jy;
-}
-function todayShamsiISO() {
-  const now = new Date();
-  const [jy, jm, jd] = toJalali(now.getFullYear(), now.getMonth()+1, now.getDate());
-  return jy + '-' + String(jm).padStart(2,'0') + '-' + String(jd).padStart(2,'0');
-}
-function todayShamsiReadable() {
-  const now = new Date();
-  const [jy, jm, jd] = toJalali(now.getFullYear(), now.getMonth()+1, now.getDate());
-  const months = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
-  const days = ['یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه','شنبه'];
-  return days[now.getDay()] + ' ' + jd + ' ' + months[jm-1] + ' ' + jy;
-}
-function shamsi2MiladiISO(shamsiStr) {
-  if (!shamsiStr) return '';
-  const parts = shamsiStr.split('-');
-  if (parts.length < 3) return shamsiStr;
-  const [gy, gm, gd] = fromJalali(parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]));
-  return gy + '-' + String(gm).padStart(2,'0') + '-' + String(gd).padStart(2,'0');
-}
-function dateToMiladi(dateStr) {
-  if (!dateStr) return new Date(0);
-  const parts = dateStr.split('-');
-  const y = parseInt(parts[0]);
-  if (y > 1500) return new Date(dateStr);
-  const [gy, gm, gd] = fromJalali(y, parseInt(parts[1]), parseInt(parts[2]));
-  return new Date(gy, gm-1, gd);
-}
-
 // ════════════════════════════════════════
 // DATA STORE (localStorage-backed)
 // ════════════════════════════════════════
@@ -380,14 +326,14 @@ const COACHES = {
 };
 
 const PLAYERS_DEFAULT = [
-  {id:'p1', name:'محمد کریمی',    age:16, level:'پیشرفته',  coachId:'c1', avatar:'#c4622d'},
-  {id:'p2', name:'آرش شیرازی',   age:22, level:'متوسط',    coachId:'c1', avatar:'#2d6a1f'},
-  {id:'p3', name:'لیلا نجفی',    age:14, level:'متوسط',    coachId:'c2', avatar:'#e07a45'},
-  {id:'p4', name:'رضا موسوی',    age:19, level:'متوسط',    coachId:'c2', avatar:'#5dbc40'},
-  {id:'p5', name:'فاطمه علوی',   age:12, level:'مبتدی',    coachId:'c3', avatar:'#e8c14a'},
-  {id:'p6', name:'امیر تهرانی',  age:25, level:'متوسط',    coachId:'c3', avatar:'#c4622d'},
-  {id:'p7', name:'نیلوفر حسنی',  age:10, level:'مبتدی',    coachId:'c2', avatar:'#3d8c2a'},
-  {id:'p8', name:'دانیال رشیدی', age:13, level:'مبتدی',    coachId:'c1', avatar:'#d4622d'},
+  {id:'p1', name:'محمد کریمی',    age:16, level:'پیشرفته',  coachId:'c1', avatar:'#c4622d', phone:'09120000001', loginCode:'09120000001'},
+  {id:'p2', name:'آرش شیرازی',   age:22, level:'متوسط',    coachId:'c1', avatar:'#2d6a1f', phone:'09120000002', loginCode:'09120000002'},
+  {id:'p3', name:'لیلا نجفی',    age:14, level:'متوسط',    coachId:'c2', avatar:'#e07a45', phone:'09120000003', loginCode:'09120000003'},
+  {id:'p4', name:'رضا موسوی',    age:19, level:'متوسط',    coachId:'c2', avatar:'#5dbc40', phone:'09120000004', loginCode:'09120000004'},
+  {id:'p5', name:'فاطمه علوی',   age:12, level:'مبتدی',    coachId:'c3', avatar:'#e8c14a', phone:'09120000005', loginCode:'09120000005'},
+  {id:'p6', name:'امیر تهرانی',  age:25, level:'متوسط',    coachId:'c3', avatar:'#c4622d', phone:'09120000006', loginCode:'09120000006'},
+  {id:'p7', name:'نیلوفر حسنی',  age:10, level:'مبتدی',    coachId:'c2', avatar:'#3d8c2a', phone:'09120000007', loginCode:'09120000007'},
+  {id:'p8', name:'دانیال رشیدی', age:13, level:'مبتدی',    coachId:'c1', avatar:'#d4622d', phone:'09120000008', loginCode:'09120000008'},
 ];
 
 function getPlayers(){
@@ -428,12 +374,202 @@ function segmentAverage(ratings, keys){
 }
 const CHART_COLORS = ['#c4622d','#2d6a1f','#e07a45','#5dbc40','#e8c14a','#3d8c2a','#8a7a6e'];
 
+// ════════════════════════════════════════
+// SMART PRINT — works on mobile & desktop
+// ════════════════════════════════════════
+function smartPrint(overlayId){
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if(!isMobile){
+    window.print();
+    return;
+  }
+  // Mobile: collect overlay HTML and offer as downloadable file
+  const ov = document.getElementById(overlayId||'pdfPrintOverlay');
+  if(!ov) return;
+  const html = '<!DOCTYPE html><html lang="fa" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">' + ov.querySelector('style').outerHTML + '</head><body style="margin:0;font-family:Tahoma,sans-serif;direction:rtl;">' + ov.querySelector('.poi-content').outerHTML + '</body></html>';
+  const blob = new Blob([html], {type:'text/html;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  // Try Web Share API first (Android Chrome shows native share sheet)
+  if(navigator.share){
+    const file = new File([blob], 'report-slr.html', {type:'text/html'});
+    navigator.share({title:'گزارش SLR', files:[file]}).catch(()=>{
+      // fallback to download
+      const a = document.createElement('a');
+      a.href = url; a.download = 'report-slr.html';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    });
+  } else {
+    const a = document.createElement('a');
+    a.href = url; a.download = 'report-slr.html';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 5000);
+  }
+}
+
+
+
+// ════════════════════════════════════════
+// JALALI (SHAMSI) DATE HELPERS
+// ════════════════════════════════════════
+const JALALI_MONTHS = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+const FA_DATE_FMT = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {year:'numeric', month:'numeric', day:'numeric'});
+
+// Convert a Gregorian date string ('YYYY-MM-DD' or ISO) to Jalali display string e.g. "۲۳ خرداد ۱۴۰۵"
+function toJalali(dateInput){
+  if(!dateInput) return '';
+  const d = new Date(dateInput.length<=10 ? dateInput+'T00:00:00' : dateInput);
+  if(isNaN(d)) return dateInput;
+  const parts = FA_DATE_FMT.formatToParts(d);
+  const get = type => parts.find(p=>p.type===type)?.value;
+  const y = get('year'), m = get('month'), day = get('day');
+  const monthIdx = (toEnglishDigits(m)|0) - 1;
+  const monthName = JALALI_MONTHS[monthIdx] || m;
+  return `${toPersianDigits(day)} ${monthName} ${toPersianDigits(y)}`;
+}
+
+// Convert a Gregorian date string to short numeric Jalali (e.g. "۱۴۰۵/۰۳/۲۳") - good for tables
+function toJalaliShort(dateInput){
+  if(!dateInput) return '';
+  const d = new Date(dateInput.length<=10 ? dateInput+'T00:00:00' : dateInput);
+  if(isNaN(d)) return dateInput;
+  const parts = FA_DATE_FMT.formatToParts(d);
+  const get = type => parts.find(p=>p.type===type)?.value;
+  const y = toEnglishDigits(get('year'));
+  const m = String(toEnglishDigits(get('month'))).padStart(2,'0');
+  const day = String(toEnglishDigits(get('day'))).padStart(2,'0');
+  return toPersianDigits(`${y}/${m}/${day}`);
+}
+
+// Current date+time formatted in Jalali, e.g. "۲۳ خرداد ۱۴۰۵ - ۱۴:۳۰"
+function nowJalaliDateTime(){
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('fa-IR', {hour:'2-digit', minute:'2-digit'});
+  return `${toJalali(now.toISOString())} - ${toPersianDigits(toEnglishDigits(timeStr))}`;
+}
+
+function toPersianDigits(str){
+  const fa = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+  return String(str).replace(/[0-9]/g, d=>fa[+d]);
+}
+function toEnglishDigits(str){
+  const fa = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+  return String(str).replace(/[۰-۹]/g, d=>fa.indexOf(d));
+}
+
+// ── Pure algorithmic Gregorian <-> Jalali conversion (no Intl dependency) ──
+function div(a,b){ return ~~(a/b); }
+function jalCal(jy){
+  const breaks = [-61,9,38,199,426,686,756,818,1111,1181,1210,1635,2060,2097,2192,2262,2324,2394,2456,3178];
+  let bl = breaks.length, gy = jy+621, leapJ=-14, jp=breaks[0], jm, jump, leap, n, i;
+  if(jy < jp || jy >= breaks[bl-1]) throw new Error('Invalid Jalali year '+jy);
+  for(i=1;i<bl;i+=1){
+    jm = breaks[i]; jump = jm - jp;
+    if(jy < jm) break;
+    leapJ += div(jump,33)*8 + div(jump%33,4);
+    jp = jm;
+  }
+  n = jy - jp;
+  leapJ += div(n,33)*8 + div((n%33)+3,4);
+  if((jump%33)===4 && (jump - n)===4) leapJ += 1;
+  const leapG = div(gy,4) - div((div(gy,100)+1)*3,4) - 150;
+  const march = 20 + leapJ - leapG;
+  if((jump - n) < 6) n = n - jump + div(jump+4,33)*33;
+  leap = ((((n+1)%33)-1)%4 === -1) ? ((((n+1)%33)-1)%4 + 4) : (((n+1)%33)-1)%4;
+  leap = (leap===0) ? 1 : 0; // 1 if leap year
+  // simpler correct calc:
+  leap = (((n+1)%33-1)%4===0) ? 1 : 0;
+  return {leap, gy, march};
+}
+function g2d(gy,gm,gd){
+  let d = div((gy+div(gm-8,6)+100100)*1461,4)
+    + div(153*((gm+9)%12)+2,5)
+    + gd - 34840408;
+  d = d - div(div(gy+100100+div(gm-8,6),100)*3,4) + 752;
+  return d;
+}
+function d2g(jdn){
+  let j = 4*jdn + 139361631;
+  j = j + div(div(4*jdn+183187720,146097)*3,4)*4 - 3908;
+  const i = div((j%1461),4)*5 + 308;
+  const gd = div(i%153,5)+1;
+  const gm = (div(i,153)%12)+1;
+  const gy = div(j,1461) - 100100 + div(8-gm,6);
+  return [gy,gm,gd];
+}
+function j2d(jy,jm,jd){
+  const r = jalCal(jy);
+  return g2d(r.gy,3,r.march) + (jm-1)*31 - (jm>6 ? (jm-7) : 0) + jd - 1;
+}
+function d2j(jdn){
+  let gy = d2g(jdn)[0], jy = gy - 621, r, jdn1f, k, jm, jd;
+  r = jalCal(jy+1);
+  jdn1f = g2d(gy+1,3,r.march);
+  if(jdn >= jdn1f){ jy += 1; r = jalCal(jy+1); jdn1f = g2d(gy+1,3,r.march); }
+  k = jdn - g2d(gy, 3, jalCal(jy).march);
+  if(k < 0){ // before this Jalali year's start -> previous year
+    r = jalCal(jy);
+    jy -= 1;
+    k = jdn - g2d(gy-1, 3, jalCal(jy).march);
+  }
+  if(k < 186){
+    jm = 1 + div(k,31);
+    jd = (k%31) + 1;
+  } else {
+    jm = 7 + div(k-186,30);
+    jd = ((k-186)%30) + 1;
+  }
+  return [jy,jm,jd];
+}
+// Gregorian date object -> [jy,jm,jd]
+function gregorianToJalali(date){
+  const jdn = g2d(date.getFullYear(), date.getMonth()+1, date.getDate());
+  return d2j(jdn);
+}
+// [jy,jm,jd] -> 'YYYY-MM-DD' Gregorian string
+function jalaliToGregorianStr(jy,jm,jd){
+  const jdn = j2d(jy,jm,jd);
+  const [gy,gm,gd] = d2g(jdn);
+  return `${gy}-${String(gm).padStart(2,'0')}-${String(gd).padStart(2,'0')}`;
+}
+function jalaliMonthDays(jy,jm){
+  if(jm <= 6) return 31;
+  if(jm <= 11) return 30;
+  // month 12 (Esfand): 29 or 30 depending on leap year
+  const r1 = jalCal(jy);
+  return r1.leap ? 30 : 29;
+}
+
+
+let loginMode = 'staff';
+function setLoginTab(mode){
+  loginMode = mode;
+  document.getElementById('ltab-staff').classList.toggle('a', mode==='staff');
+  document.getElementById('ltab-player').classList.toggle('a', mode==='player');
+  document.getElementById('staffLoginFields').style.display = mode==='staff' ? '' : 'none';
+  document.getElementById('playerLoginFields').style.display = mode==='player' ? '' : 'none';
+  document.getElementById('loginErr').style.display = 'none';
+}
 
 let currentUser = null;
 function doLogin(){
+  const err = document.getElementById('loginErr');
+  if(loginMode === 'player'){
+    const phone = document.getElementById('loginPlayerName').value.trim();
+    const pass = document.getElementById('loginPlayerCode').value.trim();
+    const player = getPlayers().find(p=> String(p.phone||'').trim()===phone && String(p.loginCode||p.phone||'')===pass && phone!=='');
+    if(player){
+      currentUser = {role:'player', name:player.name, playerId:player.id};
+      err.style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      initApp();
+    } else {
+      err.style.display = 'block';
+    }
+    return;
+  }
   const email = document.getElementById('loginEmail').value.trim().toLowerCase();
   const pass  = document.getElementById('loginPass').value;
-  const err   = document.getElementById('loginErr');
   // case-insensitive email lookup
   const key = Object.keys(USERS).find(k=>k.toLowerCase()===email);
   const user = key ? USERS[key] : null;
@@ -454,6 +590,9 @@ function doLogout(){
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('loginEmail').value = '';
   document.getElementById('loginPass').value = '';
+  document.getElementById('loginPlayerName').value = '';
+  document.getElementById('loginPlayerCode').value = '';
+  setLoginTab('staff');
 }
 
 // ════════════════════════════════════════
@@ -463,9 +602,10 @@ let activeTab = '';
 
 function initApp(){
   document.getElementById('topbarName').textContent = currentUser.name;
-  document.getElementById('topbarRole').textContent = currentUser.role === 'admin' ? 'مدیر آکادمی' : 'مربی';
+  const roleLabels = {admin:'مدیر آکادمی', coach:'مربی', player:'بازیکن'};
+  document.getElementById('topbarRole').textContent = roleLabels[currentUser.role] || '';
   buildNav();
-  const firstTab = currentUser.role === 'admin' ? 'dashboard' : 'new-report';
+  const firstTab = currentUser.role === 'admin' ? 'dashboard' : currentUser.role === 'player' ? 'my-progress' : 'new-report';
   showTab(firstTab);
 }
 
@@ -477,6 +617,11 @@ function buildNav(){
         {id:'players',      label:'👥 بازیکنان'},
         {id:'by-coach',     label:'📊 گزارش مربیان'},
         {id:'manage-coaches', label:'👨‍🏫 مدیریت مربیان'},
+        {id:'backup',       label:'💾 پشتیبان‌گیری'},
+      ]
+    : currentUser.role === 'player'
+    ? [
+        {id:'my-progress',  label:'📈 روند پیشرفت من'},
       ]
     : [
         {id:'new-report',   label:'✏️ ثبت گزارش'},
@@ -496,14 +641,17 @@ function showTab(id){
   const mc = document.getElementById('mainContent');
   mc.innerHTML = '';
   const renders = {
-    'dashboard':   renderDashboard,
-    'all-reports': renderAllReports,
-    'players':     renderPlayers,
-    'by-coach':    renderByCoach,
-    'guide':       renderGuide,
-    'new-report':  renderNewReport,
-    'my-reports':  renderMyReports,
-    'my-players':  renderMyPlayers,
+    'dashboard':      renderDashboard,
+    'all-reports':    renderAllReports,
+    'players':        renderPlayers,
+    'by-coach':       renderByCoach,
+    'guide':          renderGuide,
+    'new-report':     renderNewReport,
+    'my-reports':     renderMyReports,
+    'my-players':     renderMyPlayers,
+    'my-progress':    renderMyProgress,
+    'backup':         renderBackup,
+    'manage-coaches': renderManageCoaches,
   };
   if(renders[id]) renders[id]();
 }
@@ -515,7 +663,7 @@ function renderDashboard(){
   const reports = getReports();
   const players = getPlayers();
   const thisMonth = reports.filter(r=>{
-    const d = dateToMiladi(r.date);
+    const d = new Date(r.date);
     const n = new Date();
     return d.getMonth()===n.getMonth() && d.getFullYear()===n.getFullYear();
   });
@@ -536,7 +684,7 @@ function renderDashboard(){
             <div class="rc-header">
               <div>
                 <div class="rc-name">${r.playerName}</div>
-                <div class="rc-meta">مربی: ${r.coachName} · ${miladi2Shamsi(r.date)} · ${r.sessionTime}</div>
+                <div class="rc-meta">مربی: ${r.coachName} · ${toJalali(r.date)} · ${r.sessionTime}</div>
               </div>
               <div class="rc-score">
                 <div class="rc-score-n">${r.totalScore}</div>
@@ -596,7 +744,7 @@ function renderReportCard(r){
     <div class="rc-header">
       <div>
         <div class="rc-name">${r.playerName}</div>
-        <div class="rc-meta">مربی: ${r.coachName} · تاریخ: ${miladi2Shamsi(r.date)} · ساعت: ${r.sessionTime} · سطح: ${r.playerLevel}</div>
+        <div class="rc-meta">مربی: ${r.coachName} · تاریخ: ${toJalali(r.date)} · ساعت: ${r.sessionTime} · سطح: ${r.playerLevel}</div>
         <div style="margin-top:.4rem;font-size:.8rem;color:#5a3a20;">${r.coachNote||''}</div>
       </div>
       <div class="rc-score">
@@ -626,24 +774,32 @@ function renderPlayers(){
     <div class="table-wrap">
       <table>
         <thead><tr>
-          <th>نام بازیکن</th><th>سن</th><th>سطح</th><th>مربی</th><th>تعداد گزارش</th><th>آخرین نمره</th>
+          <th>نام بازیکن</th><th>سن</th><th>سطح</th><th>مربی</th><th>تعداد گزارش</th><th>آخرین نمره</th><th>موبایل (نام کاربری)</th><th>رمز عبور</th>
         </tr></thead>
         <tbody>
           ${players.map(p=>{
             const pr = reports.filter(r=>r.playerId===p.id);
             const last = pr.length ? pr[pr.length-1] : null;
-            return `<tr style="cursor:pointer" onclick="showPlayerProfile('${p.id}','players')">
-              <td><div style="display:flex;align-items:center;gap:.6rem;">
+            return `<tr>
+              <td style="cursor:pointer" onclick="showPlayerProfile('${p.id}','players')"><div style="display:flex;align-items:center;gap:.6rem;">
                 <div class="p-avatar" style="background:${p.avatar};width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:white;font-weight:800;">${p.name[0]}</div>
                 <div>
                   <div style="font-weight:700;font-size:.88rem;">${p.name}</div>
                 </div>
               </div></td>
-              <td>${p.age}</td>
-              <td><span class="badge ${p.level==='پیشرفته'?'badge-green':p.level==='متوسط'?'badge-clay':'badge-gray'}">${p.level}</span></td>
-              <td>${COACHES[p.coachId]?.name||'—'}</td>
-              <td>${pr.length}</td>
-              <td>${last?`<span style="font-weight:800;color:var(--clay);">${last.totalScore}</span>`:'-'}</td>
+              <td style="cursor:pointer" onclick="showPlayerProfile('${p.id}','players')">${p.age}</td>
+              <td style="cursor:pointer" onclick="showPlayerProfile('${p.id}','players')"><span class="badge ${p.level==='پیشرفته'?'badge-green':p.level==='متوسط'?'badge-clay':'badge-gray'}">${p.level}</span></td>
+              <td style="cursor:pointer" onclick="showPlayerProfile('${p.id}','players')">${COACHES[p.coachId]?.name||'—'}</td>
+              <td style="cursor:pointer" onclick="showPlayerProfile('${p.id}','players')">${pr.length}</td>
+              <td style="cursor:pointer" onclick="showPlayerProfile('${p.id}','players')">${last?`<span style="font-weight:800;color:var(--clay);">${last.totalScore}</span>`:'-'}</td>
+              <td>
+                <span style="font-family:monospace;font-size:.8rem;direction:ltr;">${p.phone||'—'}</span>
+                <button style="background:none;border:none;color:var(--clay);cursor:pointer;font-size:.75rem;margin-right:.3rem;" onclick="event.stopPropagation();setPlayerPhone('${p.id}')">✏️</button>
+              </td>
+              <td>
+                <span style="font-family:monospace;font-size:.8rem;direction:ltr;">${p.loginCode||p.phone||'—'}</span>
+                <button style="background:none;border:none;color:var(--clay);cursor:pointer;font-size:.75rem;margin-right:.3rem;" onclick="event.stopPropagation();setPlayerLoginCode('${p.id}')">✏️</button>
+              </td>
             </tr>`;
           }).join('')}
         </tbody>
@@ -666,14 +822,20 @@ function showAddPlayer(){
       <div class="form-group"><label>سن</label><input id="np-age" type="number" placeholder="سن"></div>
     </div>
     <div class="form-grid">
+      <div class="form-group"><label>شماره موبایل</label><input id="np-phone" type="text" placeholder="09xxxxxxxxx" dir="ltr" style="text-align:left"></div>
       <div class="form-group"><label>سطح</label>
         <select id="np-level"><option>مبتدی</option><option>متوسط</option><option>پیشرفته</option></select>
       </div>
-      ${isCoach ? '' : `<div class="form-group"><label>مربی</label>
+    </div>
+    ${isCoach ? '' : `<div class="form-grid">
+      <div class="form-group"><label>مربی</label>
         <select id="np-coach">
           ${Object.entries(COACHES).map(([id,c])=>`<option value="${id}">${c.name}</option>`).join('')}
         </select>
-      </div>`}
+      </div>
+    </div>`}
+    <div style="font-size:.78rem;color:var(--gray);background:#f8f5f2;border-radius:8px;padding:.7rem;margin-bottom:1rem;">
+      ℹ️ حساب ورود بازیکن به‌صورت خودکار ساخته می‌شود — نام کاربری و رمز عبور پیش‌فرض، همان شماره موبایل است. این موارد بعداً از بخش «بازیکنان» قابل تغییر است.
     </div>
     <button class="submit-btn" onclick="addPlayer()">ذخیره بازیکن</button>`;
   modal.classList.add('on');
@@ -684,17 +846,43 @@ function addPlayer(){
   const name = document.getElementById('np-name').value.trim();
   const age  = document.getElementById('np-age').value;
   const level= document.getElementById('np-level').value;
+  const phone= document.getElementById('np-phone').value.trim();
   const coach= isCoach ? currentUser.coachId : document.getElementById('np-coach').value;
   if(!name||!age){alert('نام و سن الزامیست');return;}
+  if(!phone){alert('شماره موبایل الزامیست (برای ساخت حساب ورود بازیکن)');return;}
   const players = getPlayers();
   const colors = ['#c4622d','#2d6a1f','#e07a45','#5dbc40','#e8c14a','#3d8c2a'];
   players.push({
     id:'p'+Date.now(), name, age:parseInt(age), level, coachId:coach,
-    avatar:colors[Math.floor(Math.random()*colors.length)]
+    avatar:colors[Math.floor(Math.random()*colors.length)],
+    phone,
+    loginCode: phone
   });
   savePlayers(players);
   document.getElementById('reportModal').classList.remove('on');
   if(isCoach) renderMyPlayers(); else renderPlayers();
+}
+
+function setPlayerPhone(playerId){
+  const players = getPlayers();
+  const player = players.find(p=>p.id===playerId);
+  if(!player) return;
+  const phone = prompt(`شماره موبایل جدید (نام کاربری) برای ${player.name}:`, player.phone||'');
+  if(phone === null) return;
+  player.phone = phone.trim();
+  savePlayers(players);
+  renderPlayers();
+}
+
+function setPlayerLoginCode(playerId){
+  const players = getPlayers();
+  const player = players.find(p=>p.id===playerId);
+  if(!player) return;
+  const code = prompt(`رمز عبور جدید برای ${player.name} (پیش‌فرض همان شماره موبایل است):`, player.loginCode||player.phone||'');
+  if(code === null) return;
+  player.loginCode = code.trim();
+  savePlayers(players);
+  renderPlayers();
 }
 
 // ════════════════════════════════════════
@@ -732,13 +920,38 @@ function filterAndShow(coachId){
   },100);
 }
 
+function buildDayOptions(jy, jm, selectedDay){
+  const days = jalaliMonthDays(jy, jm);
+  let opts = '';
+  for(let d=1; d<=days; d++) opts += `<option value="${d}" ${d===selectedDay?'selected':''}>${toPersianDigits(d)}</option>`;
+  return opts;
+}
+function buildYearOptions(selectedYear){
+  let opts = '';
+  for(let y=1390; y<=1420; y++) opts += `<option value="${y}" ${y===selectedYear?'selected':''}>${toPersianDigits(y)}</option>`;
+  return opts;
+}
+function updateJalaliDate(){
+  const jy = parseInt(document.getElementById('r-date-year').value);
+  const jm = parseInt(document.getElementById('r-date-month').value);
+  const dayEl = document.getElementById('r-date-day');
+  const curDay = parseInt(dayEl.value);
+  // rebuild days in case month changed
+  dayEl.innerHTML = buildDayOptions(jy, jm, Math.min(curDay, jalaliMonthDays(jy,jm)));
+  const jd = parseInt(dayEl.value);
+  const gStr = jalaliToGregorianStr(jy, jm, jd);
+  document.getElementById('r-date').value = gStr;
+}
+
 // ════════════════════════════════════════
 // NEW REPORT (coach)
 // ════════════════════════════════════════
 function renderNewReport(){
   const myPlayers = getPlayers().filter(p=>p.coachId===currentUser.coachId);
-  const dateStr = todayShamsiISO(); // تاریخ شمسی امروز
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const [jy,jm,jd] = gregorianToJalali(now);
 
   const html = `
   <div class="alert alert-success" id="saveAlert">✅ گزارش با موفقیت ذخیره شد!</div>
@@ -762,9 +975,13 @@ function renderNewReport(){
     </div>
     <div class="form-grid-3">
       <div class="form-group">
-        <label>تاریخ جلسه (شمسی) * <span style="font-size:.65rem;font-weight:400;color:var(--gray);">مثال: ۱۴۰۵-۰۳-۲۳</span></label>
-        <input type="text" id="r-date" value="${dateStr}" placeholder="YYYY-MM-DD شمسی" dir="ltr" style="text-align:left;font-family:monospace;">
-        <div style="font-size:.72rem;color:var(--gray);margin-top:.3rem;" id="datePreview"></div>
+        <label>تاریخ جلسه * (شمسی)</label>
+        <input type="hidden" id="r-date" value="${dateStr}">
+        <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:.4rem;">
+          <select id="r-date-day" onchange="updateJalaliDate()">${buildDayOptions(jy,jm,jd)}</select>
+          <select id="r-date-month" onchange="updateJalaliDate()">${JALALI_MONTHS.map((m,i)=>`<option value="${i+1}" ${i+1===jm?'selected':''}>${m}</option>`).join('')}</select>
+          <select id="r-date-year" onchange="updateJalaliDate()">${buildYearOptions(jy)}</select>
+        </div>
       </div>
       <div class="form-group"><label>ساعت جلسه *</label><input type="time" id="r-time" value="${timeStr}"></div>
       <div class="form-group"><label>حضور</label>
@@ -785,7 +1002,7 @@ function renderNewReport(){
       <label>روی چه مواردی کار شد؟ (چند مورد انتخاب کنید)</label>
       <div class="check-group" id="focusGroup">
         ${['فورهند','بک‌هند','سرویس','ولی','اسمش','فوتورک','تاکتیک','بازی آزاد','روانشناسی','استقامت'].map(f=>
-          `<label class="check-item" onclick="toggleCheck(this)"><input type="checkbox" value="${f}"> ${f}</label>`
+          `<label class="check-item" onclick="toggleCheck(this, event)"><input type="checkbox" value="${f}"> ${f}</label>`
         ).join('')}
       </div>
     </div>
@@ -875,9 +1092,11 @@ function buildRating(...pairs){
   return html;
 }
 
-function toggleCheck(el){
-  el.classList.toggle('checked');
-  el.querySelector('input').checked = el.classList.contains('checked');
+function toggleCheck(el, ev){
+  if(ev) ev.preventDefault();
+  const input = el.querySelector('input');
+  input.checked = !input.checked;
+  el.classList.toggle('checked', input.checked);
 }
 
 function onPlayerSelect(id){
@@ -981,7 +1200,7 @@ function renderMyPlayers(){
           ${last?`<div style="margin-right:auto;text-align:center;"><div style="font-size:1.5rem;font-weight:800;color:var(--clay);">${last.totalScore}</div><div style="font-size:.62rem;color:var(--gray);">نمره آخر</div></div>`:''}
         </div>
         <div style="font-size:.78rem;color:var(--gray);">${pr.length} گزارش ثبت شده</div>
-        ${last?`<div style="font-size:.75rem;color:var(--gray);margin-top:.3rem;">آخرین جلسه: ${miladi2Shamsi(last.date)}</div>`:''}
+        ${last?`<div style="font-size:.75rem;color:var(--gray);margin-top:.3rem;">آخرین جلسه: ${toJalali(last.date)}</div>`:''}
         <button class="submit-btn" style="width:100%;margin-top:1rem;font-size:.8rem;padding:.6rem;" onclick="event.stopPropagation();document.getElementById('r-player').value='${p.id}';onPlayerSelect('${p.id}');showTab('new-report');setTimeout(()=>{document.getElementById('r-player').value='${p.id}';onPlayerSelect('${p.id}')},200)">+ گزارش جدید</button>
       </div>`;
     }).join('')}
@@ -994,18 +1213,19 @@ function renderMyPlayers(){
 // ════════════════════════════════════════
 function showPlayerProfile(playerId, backTab, period){
   period = period || 'all';
+  const readOnly = currentUser.role === 'player';
   const player = getPlayers().find(p=>p.id===playerId);
   if(!player) return;
-  const allReports = getReports().filter(r=>r.playerId===playerId).slice().sort((a,b)=>dateToMiladi(a.date)-dateToMiladi(b.date));
+  const allReports = getReports().filter(r=>r.playerId===playerId).slice().sort((a,b)=>new Date(a.date+'T'+(a.sessionTime||'00:00'))-new Date(b.date+'T'+(b.sessionTime||'00:00')));
 
   const now = new Date();
   let reports = allReports;
   if(period === 'weekly'){
     const cutoff = new Date(now); cutoff.setDate(cutoff.getDate()-7);
-    reports = allReports.filter(r=>dateToMiladi(r.date) >= cutoff);
+    reports = allReports.filter(r=>new Date(r.date) >= cutoff);
   } else if(period === 'monthly'){
     const cutoff = new Date(now); cutoff.setMonth(cutoff.getMonth()-1);
-    reports = allReports.filter(r=>dateToMiladi(r.date) >= cutoff);
+    reports = allReports.filter(r=>new Date(r.date) >= cutoff);
   }
 
   const segLabels = Object.keys(SKILL_SEGMENTS);
@@ -1014,15 +1234,15 @@ function showPlayerProfile(playerId, backTab, period){
   const html = `
   <div class="section-header">
     <div class="section-title">📈 روند پیشرفت — ${player.name}</div>
-    <button style="background:var(--lightgray);color:var(--gray);border:none;border-radius:8px;padding:.6rem 1.2rem;font-family:'Vazirmatn',sans-serif;font-size:.8rem;cursor:pointer;" onclick="showTab('${backTab}')">← بازگشت</button>
+    ${backTab ? `<button style="background:var(--lightgray);color:var(--gray);border:none;border-radius:8px;padding:.6rem 1.2rem;font-family:'Vazirmatn',sans-serif;font-size:.8rem;cursor:pointer;" onclick="showTab('${backTab}')">← بازگشت</button>` : ''}
   </div>
 
   <div class="card no-print">
-    <div class="card-title"><span class="ico">📤</span> خروجی گزارش برای والدین</div>
+    <div class="card-title"><span class="ico">📤</span> ${readOnly ? 'خروجی گزارش' : 'خروجی گزارش برای والدین'}</div>
     <div class="form-grid-3">
       <div class="form-group" style="margin-bottom:0;">
         <label>بازه زمانی</label>
-        <select id="profPeriod" onchange="showPlayerProfile('${playerId}','${backTab}', this.value)">
+        <select id="profPeriod" onchange="showPlayerProfile('${playerId}',${backTab?`'${backTab}'`:'null'}, this.value)">
           <option value="weekly" ${period==='weekly'?'selected':''}>هفتگی (۷ روز اخیر)</option>
           <option value="monthly" ${period==='monthly'?'selected':''}>ماهانه (۳۰ روز اخیر)</option>
           <option value="all" ${period==='all'?'selected':''}>روند کلی از ابتدا</option>
@@ -1046,14 +1266,36 @@ function showPlayerProfile(playerId, backTab, period){
     <div class="card-title"><span class="ico">🧩</span> روند سگمنت‌ها — ${periodLabel}</div>
     <canvas id="segTrendChart" height="120"></canvas>
   </div>
+  <div class="card">
+    <div class="card-title"><span class="ico">📋</span> تعداد جلسات در این بازه: ${reports.length}</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>تاریخ</th><th>مربی</th><th>نمره کلی</th><th>حال بازیکن</th><th>پیام به والدین</th></tr></thead>
+        <tbody>
+          ${reports.slice().reverse().map(r=>`<tr>
+            <td>${toJalaliShort(r.date)}</td><td>${r.coachName||''}</td>
+            <td style="font-weight:800;color:${r.totalScore>=80?'#2d7a3a':r.totalScore>=60?'#c4622d':'#c0392b'}">${r.totalScore}</td>
+            <td>${r.mood||''}</td><td>${r.coachNote||''}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>
   `}
   `;
   document.getElementById('mainContent').innerHTML = html;
   if(reports.length) setTimeout(()=>renderProfileCharts(reports, segLabels), 50);
 }
 
+// ════════════════════════════════════════
+// MY PROGRESS (player - read only)
+// ════════════════════════════════════════
+function renderMyProgress(){
+  showPlayerProfile(currentUser.playerId, null, 'all');
+}
+
 function renderProfileCharts(reports, segLabels){
-  const labels = reports.map(r=>r.date);
+  const labels = reports.map(r=>toJalaliShort(r.date));
   if(window._overallTrendChart) window._overallTrendChart.destroy();
   if(window._segTrendChart) window._segTrendChart.destroy();
 
@@ -1102,15 +1344,15 @@ function renderProfileCharts(reports, segLabels){
 // EXPORT — EXCEL & PDF
 // ════════════════════════════════════════
 function getFilteredReports(playerId, period){
-  const all = getReports().filter(r=>r.playerId===playerId).slice().sort((a,b)=>dateToMiladi(a.date)-dateToMiladi(b.date));
+  const all = getReports().filter(r=>r.playerId===playerId).slice().sort((a,b)=>new Date(a.date+'T'+(a.sessionTime||'00:00'))-new Date(b.date+'T'+(b.sessionTime||'00:00')));
   const now = new Date();
   if(period === 'weekly'){
     const cutoff = new Date(now); cutoff.setDate(cutoff.getDate()-7);
-    return all.filter(r=>dateToMiladi(r.date) >= cutoff);
+    return all.filter(r=>new Date(r.date) >= cutoff);
   }
   if(period === 'monthly'){
     const cutoff = new Date(now); cutoff.setMonth(cutoff.getMonth()-1);
-    return all.filter(r=>dateToMiladi(r.date) >= cutoff);
+    return all.filter(r=>new Date(r.date) >= cutoff);
   }
   return all;
 }
@@ -1122,25 +1364,37 @@ function exportPlayerExcel(playerId, period){
   const periodLabel = {weekly:'هفتگی', monthly:'ماهانه', all:'کلی'}[period];
 
   const summary = reports.map(r=>({
-    'تاریخ': miladi2Shamsi(r.date), 'ساعت': r.sessionTime, 'مربی': r.coachName,
+    'تاریخ': toJalaliShort(r.date), 'ساعت': r.sessionTime, 'مربی': r.coachName,
     'حضور': r.attendance, 'نمره کلی': r.totalScore, 'حال بازیکن': r.mood,
     'ارتقاء سطح': r.upgrade, 'پیشرفت': r.progress||'', 'چالش': r.challenge||'',
     'تمرین خانگی': r.homework||'', 'پیام به والدین': r.coachNote||'',
   }));
 
   const skillRows = reports.map(r=>{
-    const row = {'تاریخ': miladi2Shamsi(r.date)};
+    const row = {'تاریخ': toJalaliShort(r.date)};
     Object.entries(SKILL_NAMES_MAP).forEach(([k,label])=>{ row[label] = r.ratings?.[k] ?? ''; });
     return row;
   });
 
   const segRows = reports.map(r=>{
-    const row = {'تاریخ': miladi2Shamsi(r.date), 'نمره کلی': r.totalScore};
+    const row = {'تاریخ': toJalaliShort(r.date), 'نمره کلی': r.totalScore};
     Object.keys(SKILL_SEGMENTS).forEach(seg=>{ row[seg] = segmentAverage(r.ratings, SKILL_SEGMENTS[seg]); });
     return row;
   });
 
+  const genDate = nowJalaliDateTime();
+  const coachNames = [...new Set(reports.map(r=>r.coachName).filter(Boolean))];
+
+  const meta = [
+    {'فیلد':'نام بازیکن', 'مقدار': player.name},
+    {'فیلد':'سطح بازیکن', 'مقدار': player.level},
+    {'فیلد':'مربی', 'مقدار': coachNames.join('، ')||'-'},
+    {'فیلد':'بازه گزارش', 'مقدار': periodLabel},
+    {'فیلد':'تاریخ صدور گزارش', 'مقدار': genDate},
+  ];
+
   const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(meta), 'اطلاعات گزارش');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summary), 'خلاصه');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(segRows), 'سگمنت‌ها');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(skillRows), 'جزئیات مهارت‌ها');
@@ -1148,72 +1402,108 @@ function exportPlayerExcel(playerId, period){
 }
 
 function exportPlayerPDF(playerId, period){
-  const player = getPlayers().find(p=>p.id===playerId);
-  const reports = getFilteredReports(playerId, period);
-  if(!reports.length){ alert('گزارشی برای این بازه یافت نشد'); return; }
-  const periodLabel = {weekly:'هفتگی (۷ روز اخیر)', monthly:'ماهانه (۳۰ روز اخیر)', all:'روند کلی از ابتدا'}[period];
-  const avg = Math.round(reports.reduce((a,r)=>a+(r.totalScore||0),0)/reports.length);
-  const first = reports[0], last = reports[reports.length-1];
+  try {
+    const player = getPlayers().find(p=>p.id===playerId);
+    if(!player){ alert('بازیکن پیدا نشد'); return; }
+    const reports = getFilteredReports(playerId, period);
+    if(!reports.length){
+      alert('گزارشی برای «'+ player.name +'» در این بازه ثبت نشده است.\nابتدا گزارش ثبت کنید.');
+      return;
+    }
+    const periodLabel = {weekly:'هفتگی', monthly:'ماهانه', all:'کلی'}[period] || period;
+    const avg = Math.round(reports.reduce((a,r)=>a+(r.totalScore||0),0)/reports.length);
+    const first = reports[0], last = reports[reports.length-1];
+    const coachNames = [...new Set(reports.map(r=>r.coachName).filter(Boolean))];
+    const coachLabel = coachNames.length ? coachNames.join('، ') : '-';
+    const genDate = nowJalaliDateTime();
+    const segLabels = Object.keys(SKILL_SEGMENTS);
 
-  const w = window.open('', '_blank');
-  const segLabels = Object.keys(SKILL_SEGMENTS);
-  const rowsHtml = reports.map(r=>`
-    <tr>
-      <td>${miladi2Shamsi(r.date)}</td><td>${r.sessionTime}</td><td>${r.attendance}</td>
+    const rowsHtml = reports.map(r=>`<tr>
+      <td>${toJalaliShort(r.date)}</td><td>${r.sessionTime||''}</td><td>${r.coachName||''}</td>
+      <td>${r.attendance||''}</td>
       <td style="font-weight:800;color:${r.totalScore>=80?'#2d7a3a':r.totalScore>=60?'#c4622d':'#c0392b'}">${r.totalScore}</td>
-      <td>${r.mood||''}</td>
-      <td>${(r.focusAreas||[]).join('، ')}</td>
-      <td>${r.progress||''}</td>
-      <td>${r.coachNote||''}</td>
+      <td>${r.mood||''}</td><td>${(r.focusAreas||[]).join('، ')}</td>
+      <td>${r.progress||''}</td><td>${r.coachNote||''}</td>
     </tr>`).join('');
 
-  const segHtml = segLabels.map(seg=>{
-    const vals = reports.map(r=>segmentAverage(r.ratings, SKILL_SEGMENTS[seg]));
-    const segAvg = (vals.reduce((a,v)=>a+v,0)/vals.length).toFixed(1);
-    return `<tr><td>${seg}</td><td style="font-weight:800;">${segAvg} / 5</td></tr>`;
-  }).join('');
+    const segHtml = segLabels.map(seg=>{
+      const vals = reports.map(r=>segmentAverage(r.ratings, SKILL_SEGMENTS[seg]));
+      const segAvg = (vals.reduce((a,v)=>a+v,0)/vals.length).toFixed(1);
+      return `<tr><td>${seg}</td><td style="font-weight:800;">${segAvg} / 5</td></tr>`;
+    }).join('');
 
-  w.document.write(`<!DOCTYPE html><html lang="fa" dir="rtl"><head><meta charset="UTF-8">
-  <title>گزارش ${player.name}</title>
-  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    *{box-sizing:border-box;}
-    body{font-family:'Vazirmatn',sans-serif;direction:rtl;padding:2rem;color:#2a1509;}
-    h1{font-size:1.4rem;color:#c4622d;margin-bottom:.2rem;}
-    .sub{color:#8a7a6e;font-size:.85rem;margin-bottom:1.5rem;}
-    .stats{display:flex;gap:1rem;margin-bottom:1.5rem;}
-    .stat{flex:1;background:#f8f5f2;border-radius:8px;padding:1rem;text-align:center;}
-    .stat .n{font-size:1.6rem;font-weight:800;color:#c4622d;}
-    .stat .l{font-size:.72rem;color:#8a7a6e;margin-top:.3rem;}
-    table{width:100%;border-collapse:collapse;font-size:.78rem;margin-bottom:1.5rem;}
-    th,td{border:1px solid #e8e0d8;padding:.5rem .6rem;text-align:right;}
-    th{background:#1a0d06;color:#f5efe6;}
-    h2{font-size:1rem;color:#1a0d06;margin-bottom:.6rem;border-right:4px solid #c4622d;padding-right:.6rem;}
-    .footer{text-align:center;color:#8a7a6e;font-size:.75rem;margin-top:2rem;}
-    @media print{ .no-print{display:none;} }
-  </style></head><body>
-  <h1>🎾 گزارش پیشرفت — ${player.name}</h1>
-  <div class="sub">SLR Tennis Academy &middot; بازه: ${periodLabel} &middot; از ${miladi2Shamsi(first.date)} تا ${miladi2Shamsi(last.date)} &middot; سطح: ${player.level}</div>
-  <div class="stats">
-    <div class="stat"><div class="n">${reports.length}</div><div class="l">تعداد جلسات</div></div>
-    <div class="stat"><div class="n">${avg}</div><div class="l">میانگین نمره (از ۱۰۰)</div></div>
-    <div class="stat"><div class="n">${last.totalScore}</div><div class="l">آخرین نمره</div></div>
-  </div>
-  <h2>میانگین سگمنت‌ها در این بازه</h2>
-  <table><tr><th>سگمنت</th><th>میانگین</th></tr>${segHtml}</table>
-  <h2>جزئیات جلسات</h2>
-  <table>
-    <tr><th>تاریخ</th><th>ساعت</th><th>حضور</th><th>نمره</th><th>حال بازیکن</th><th>موضوع تمرین</th><th>پیشرفت</th><th>پیام به والدین</th></tr>
-    ${rowsHtml}
-  </table>
-  <div class="footer">SLR Tennis Academy — این گزارش به صورت خودکار تولید شده است</div>
-  <div class="no-print" style="text-align:center;margin-top:1rem;">
-    <button onclick="window.print()" style="background:#c4622d;color:#fff;border:none;border-radius:8px;padding:.8rem 2rem;font-family:'Vazirmatn',sans-serif;font-size:.9rem;cursor:pointer;">🖨️ پرینت / ذخیره PDF</button>
-  </div>
-  </body></html>`);
-  w.document.close();
-  setTimeout(()=>w.print(), 400);
+    const old = document.getElementById('pdfPrintOverlay');
+    if(old) old.remove();
+
+    const ov = document.createElement('div');
+    ov.id = 'pdfPrintOverlay';
+    // outer container — fixed, full screen, white, on top of everything
+    ov.setAttribute('style','position:fixed;top:0;left:0;right:0;bottom:0;background:#fff;z-index:2147483647;overflow-y:auto;font-family:Tahoma,sans-serif;direction:rtl;color:#222;');
+
+    const styleEl = document.createElement('style');
+    styleEl.textContent = `
+      #pdfPrintOverlay{font-family:Tahoma,sans-serif!important;}
+      #pdfPrintOverlay *{box-sizing:border-box;font-family:Tahoma,sans-serif;}
+      .poi-bar{position:sticky;top:0;background:#1a0d06;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;}
+      .poi-bar span{color:#fff;font-weight:bold;font-size:14px;}
+      .poi-bar button{border:none;border-radius:6px;padding:7px 14px;font-size:13px;cursor:pointer;font-family:Tahoma,sans-serif;}
+      .poi-content{padding:24px;}
+      .poi-content h1{font-size:20px;color:#c4622d;margin:0 0 6px;}
+      .poi-content .sub{font-size:12px;color:#888;margin-bottom:4px;}
+      .poi-stats{display:flex;gap:12px;margin:16px 0;flex-wrap:wrap;}
+      .poi-stat{flex:1;min-width:80px;background:#f8f5f2;border-radius:8px;padding:12px;text-align:center;}
+      .poi-stat .n{font-size:24px;font-weight:bold;color:#c4622d;}
+      .poi-stat .l{font-size:11px;color:#888;margin-top:4px;}
+      .poi-content h2{font-size:14px;color:#1a0d06;margin:16px 0 8px;border-right:4px solid #c4622d;padding-right:8px;}
+      .poi-content table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px;}
+      .poi-content th,.poi-content td{border:1px solid #ddd;padding:6px 8px;text-align:right;}
+      .poi-content th{background:#1a0d06;color:#fff;}
+      .poi-foot{text-align:center;color:#aaa;font-size:11px;padding:20px 0;}
+      @media print{
+        .poi-bar{display:none!important;}
+        #pdfPrintOverlay{position:static!important;overflow:visible!important;}
+        body>*:not(#pdfPrintOverlay){display:none!important;}
+      }
+    `;
+    ov.appendChild(styleEl);
+
+    const bar = document.createElement('div');
+    bar.className = 'poi-bar';
+    bar.innerHTML = `<span>🎾 گزارش ${player.name}</span><div style="display:flex;gap:8px;">
+      <button onclick="smartPrint()" style="background:#c4622d;color:#fff;">🖨️ پرینت / PDF</button>
+      <button onclick="document.getElementById('pdfPrintOverlay').remove()" style="background:#555;color:#fff;">✕ بستن</button>
+    </div>`;
+    ov.appendChild(bar);
+
+    const content = document.createElement('div');
+    content.className = 'poi-content';
+    content.innerHTML = `
+      <h1>🎾 گزارش پیشرفت — ${player.name}</h1>
+      <div class="sub">SLR Tennis Academy · بازه: ${periodLabel} · از ${toJalali(first.date)} تا ${toJalali(last.date)}</div>
+      <div class="sub">سطح: ${player.level} · مربی: ${coachLabel} · تاریخ صدور: ${genDate}</div>
+      <div class="poi-stats">
+        <div class="poi-stat"><div class="n">${reports.length}</div><div class="l">تعداد جلسات</div></div>
+        <div class="poi-stat"><div class="n">${avg}</div><div class="l">میانگین نمره</div></div>
+        <div class="poi-stat"><div class="n">${last.totalScore}</div><div class="l">آخرین نمره</div></div>
+      </div>
+      <h2>میانگین سگمنت‌ها</h2>
+      <table><tr><th>سگمنت</th><th>میانگین (از ۵)</th></tr>${segHtml}</table>
+      <h2>جزئیات جلسات (${reports.length} جلسه)</h2>
+      <table>
+        <tr><th>تاریخ</th><th>ساعت</th><th>مربی</th><th>حضور</th><th>نمره</th><th>حال</th><th>موضوع</th><th>پیشرفت</th><th>پیام والدین</th></tr>
+        ${rowsHtml}
+      </table>
+      <div class="poi-foot">SLR Tennis Academy — گزارش خودکار سیستم</div>
+    `;
+    ov.appendChild(content);
+    document.body.appendChild(ov);
+    ov.scrollTop = 0;
+
+  } catch(err) {
+    alert('خطا: ' + err.message);
+  }
 }
+
 
 // ════════════════════════════════════════
 // AI COACH ASSISTANT — NEXT SESSION SUGGESTION
@@ -1221,7 +1511,7 @@ function exportPlayerPDF(playerId, period){
 async function generateCoachSuggestion(playerId){
   const box = document.getElementById('aiSuggestionBox');
   const player = getPlayers().find(p=>p.id===playerId);
-  const reports = getReports().filter(r=>r.playerId===playerId).slice().sort((a,b)=>dateToMiladi(a.date)-dateToMiladi(b.date));
+  const reports = getReports().filter(r=>r.playerId===playerId).slice().sort((a,b)=>new Date(a.date+'T'+(a.sessionTime||'00:00'))-new Date(b.date+'T'+(b.sessionTime||'00:00')));
 
   const header = `<div class="sec-divider" style="margin-top:.5rem;">🎯 پیشنهاد دستیار مربی برای این جلسه</div>`;
 
@@ -1236,7 +1526,7 @@ async function generateCoachSuggestion(playerId){
   const segLabels = Object.keys(SKILL_SEGMENTS);
   const historyText = recent.map(r=>{
     const segs = segLabels.map(seg=>`${seg}: ${segmentAverage(r.ratings, SKILL_SEGMENTS[seg])}/5`).join('، ');
-    return `تاریخ ${miladi2Shamsi(r.date)} | نمره کلی ${r.totalScore}/100 | حضور: ${r.attendance} | حال: ${r.mood} | سگمنت‌ها → ${segs} | تمرکز جلسه: ${(r.focusAreas||[]).join('، ')||'-'} | پیشرفت: ${r.progress||'-'} | چالش: ${r.challenge||'-'}`;
+    return `تاریخ ${toJalali(r.date)} | نمره کلی ${r.totalScore}/100 | حضور: ${r.attendance} | حال: ${r.mood} | سگمنت‌ها → ${segs} | تمرکز جلسه: ${(r.focusAreas||[]).join('، ')||'-'} | پیشرفت: ${r.progress||'-'} | چالش: ${r.challenge||'-'}`;
   }).join('\n');
 
   const prompt = `تو یک مربی فوق‌حرفه‌ای و باتجربه تنیس هستی که به عنوان دستیار مربیان آکادمی SLR کار می‌کنی.
@@ -1260,8 +1550,8 @@ ${historyText}
       body: JSON.stringify({ prompt })
     });
     const data = await response.json();
-    if (data.error) throw new Error(data.error);
-    const text = data.text || '';
+    if(!response.ok || data.error) throw new Error(data.error || 'request failed');
+    const text = (data.text || '').trim();
     if(!text) throw new Error('empty');
     box.innerHTML = `${header}
       <div style="background:#fdf0ea;border:1px solid #f0c0a0;border-radius:8px;padding:1.2rem;font-size:.85rem;line-height:1.9;white-space:pre-wrap;">${text.replace(/</g,'&lt;')}</div>
@@ -1270,7 +1560,11 @@ ${historyText}
       </div>`;
   }catch(e){
     box.innerHTML = `${header}
-      <div class="alert alert-err show" style="margin-bottom:.6rem;">⚠️ خطا در دریافت پیشنهاد. لطفاً دوباره تلاش کنید.</div>
+      <div class="alert alert-err show" style="margin-bottom:.6rem;">
+        ⚠️ دستیار هوش مصنوعی در دسترس نیست. (${(e.message||'').replace(/</g,'&lt;')})
+        <br><br>
+        اگر این سایت روی Cloudflare Pages با تابع <code>/api/coach-suggestion</code> و کلید ANTHROPIC_API_KEY تنظیم نشده باشد، این بخش کار نخواهد کرد.
+      </div>
       <button class="submit-btn" style="font-size:.8rem;padding:.5rem 1.2rem;" onclick="generateCoachSuggestion('${playerId}')">✨ تلاش دوباره</button>`;
   }
 }
@@ -1287,7 +1581,7 @@ function showReport(id){
     <div class="modal-header">
       <div>
         <div class="modal-title">📋 گزارش ارزیابی — ${r.playerName}</div>
-        <div style="font-size:.75rem;color:var(--gray);margin-top:.2rem;">مربی: ${r.coachName} · ${miladi2Shamsi(r.date)} · ${r.sessionTime}</div>
+        <div style="font-size:.75rem;color:var(--gray);margin-top:.2rem;">مربی: ${r.coachName} · ${toJalali(r.date)} · ${r.sessionTime}</div>
       </div>
       <div style="display:flex;align-items:center;gap:1rem;">
         <div style="text-align:center;">
@@ -1344,10 +1638,97 @@ function showReport(id){
     ${r.coachNote?`<div style="background:#fdf8e8;border-radius:8px;padding:1rem;margin-bottom:.8rem;border:1px solid #e8d890;"><div style="font-size:.7rem;font-weight:700;color:#8a6a10;margin-bottom:.3rem;">💬 پیام به والدین:</div><div style="font-size:.85rem;">${r.coachNote}</div></div>`:''}
     <div style="background:#f8f5f2;border-radius:8px;padding:.8rem;font-size:.82rem;color:var(--gray);">ارتقاء سطح: <strong style="color:var(--dark);">${r.upgrade}</strong></div>
     <div style="text-align:center;margin-top:1.5rem;" class="no-print">
-      <button class="submit-btn" style="font-size:.8rem;padding:.6rem 1.5rem;" onclick="window.print()">🖨️ پرینت / ذخیره PDF</button>
+      <button class="submit-btn" style="font-size:.8rem;padding:.6rem 1.5rem;" onclick="printSingleReport('${r.id}')">🖨️ پرینت / ذخیره PDF</button>
     </div>`;
   document.getElementById('reportModal').classList.add('on');
   setTimeout(()=>renderReportCharts(segLabels, segValues, r.totalScore), 50);
+}
+
+
+function printSingleReport(id){
+  const r = getReports().find(x=>x.id===id);
+  if(!r) return;
+  document.getElementById('reportModal').classList.remove('on');
+
+  const skillNames = SKILL_NAMES_MAP;
+  const stars = n => '★'.repeat(Math.round(n))+'☆'.repeat(5-Math.round(n));
+  const segLabels = Object.keys(SKILL_SEGMENTS);
+
+  const skillsHtml = Object.entries(r.ratings||{}).map(([k,v])=>`
+    <tr><td>${skillNames[k]||k}</td><td style="color:#c4622d;">${stars(v)}</td><td style="font-weight:700;">${v}/5</td></tr>`).join('');
+
+  const segHtml = segLabels.map(seg=>{
+    const avg = segmentAverage(r.ratings, SKILL_SEGMENTS[seg]);
+    return `<tr><td>${seg}</td><td style="font-weight:800;">${avg.toFixed(1)} / 5</td></tr>`;
+  }).join('');
+
+  const old = document.getElementById('pdfPrintOverlay');
+  if(old) old.remove();
+
+  const ov = document.createElement('div');
+  ov.id = 'pdfPrintOverlay';
+  ov.setAttribute('style','position:fixed;top:0;left:0;right:0;bottom:0;background:#fff;z-index:2147483647;overflow-y:auto;font-family:Tahoma,sans-serif;direction:rtl;color:#222;');
+
+  const styleEl = document.createElement('style');
+  styleEl.textContent = [
+    '#pdfPrintOverlay *{box-sizing:border-box;font-family:Tahoma,sans-serif;}',
+    '.poi-bar{position:sticky;top:0;background:#1a0d06;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;}',
+    '.poi-bar span{color:#fff;font-weight:bold;font-size:14px;}',
+    '.poi-bar button{border:none;border-radius:6px;padding:7px 14px;font-size:13px;cursor:pointer;}',
+    '.poi-content{padding:20px;}',
+    '.poi-content h1{font-size:18px;color:#c4622d;margin:0 0 4px;}',
+    '.poi-content .sub{font-size:12px;color:#888;margin-bottom:3px;}',
+    '.poi-meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0;}',
+    '.poi-meta-item{background:#f8f5f2;border-radius:6px;padding:8px;text-align:center;}',
+    '.poi-meta-item .l{font-size:10px;color:#888;}.poi-meta-item .v{font-size:13px;font-weight:bold;margin-top:2px;}',
+    '.poi-section{margin:12px 0 4px;font-size:13px;font-weight:bold;color:#1a0d06;border-right:3px solid #c4622d;padding-right:6px;}',
+    '.poi-content table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px;}',
+    '.poi-content th,.poi-content td{border:1px solid #ddd;padding:5px 7px;text-align:right;}',
+    '.poi-content th{background:#1a0d06;color:#fff;}',
+    '.poi-box{background:#f8f5f2;border-radius:6px;padding:10px;margin-bottom:8px;font-size:13px;}',
+    '.poi-foot{text-align:center;color:#aaa;font-size:11px;padding:16px 0;}',
+    '@media print{.poi-bar{display:none!important;}#pdfPrintOverlay{position:absolute!important;overflow:visible!important;}body>*:not(#pdfPrintOverlay){display:none!important;}}'
+  ].join('');
+  ov.appendChild(styleEl);
+
+  const scoreColor = r.totalScore>=80?'#2d7a3a':r.totalScore>=60?'#c4622d':'#c0392b';
+  const bar = document.createElement('div');
+  bar.className = 'poi-bar';
+  bar.innerHTML = '<span>\u{1F4CB} \u06AF\u0632\u0627\u0631\u0634 ' + r.playerName + ' \u00B7 ' + toJalali(r.date) + '</span>' +
+    '<div style="display:flex;gap:6px;">' +
+    '<button onclick="smartPrint()" style="background:#c4622d;color:#fff;">\uD83D\uDDA8\uFE0F \u067E\u0631\u06CC\u0646\u062A / PDF</button>' +
+    '<button onclick="document.getElementById(\'pdfPrintOverlay\').remove()" style="background:#555;color:#fff;">\u2715 \u0628\u0633\u062A\u0646</button>' +
+    '</div>';
+  ov.appendChild(bar);
+
+  const content = document.createElement('div');
+  content.className = 'poi-content';
+  const focusHtml = (r.focusAreas&&r.focusAreas.length) ? '<div class="poi-section">\u0645\u0648\u0636\u0648\u0639 \u062A\u0645\u0631\u06CC\u0646</div><div class="poi-box">' + r.focusAreas.join(' \u00B7 ') + '</div>' : '';
+  const progressHtml = r.progress ? '<div class="poi-section">\u067E\u06CC\u0634\u0631\u0641\u062A</div><div class="poi-box">' + r.progress + '</div>' : '';
+  const challengeHtml = r.challenge ? '<div class="poi-section">\u0686\u0627\u0644\u0634</div><div class="poi-box">' + r.challenge + '</div>' : '';
+  const homeworkHtml = r.homework ? '<div class="poi-section">\u062A\u0645\u0631\u06CC\u0646 \u062E\u0627\u0646\u06AF\u06CC</div><div class="poi-box">' + r.homework + '</div>' : '';
+  const noteHtml = r.coachNote ? '<div class="poi-section">\u067E\u06CC\u0627\u0645 \u0628\u0647 \u0648\u0627\u0644\u062F\u06CC\u0646</div><div class="poi-box" style="background:#fdf8e8;border:1px solid #e8d890;">' + r.coachNote + '</div>' : '';
+
+  content.innerHTML =
+    '<h1>\uD83D\uDCCB \u06AF\u0632\u0627\u0631\u0634 \u0627\u0631\u0632\u06CC\u0627\u0628\u06CC \u2014 ' + r.playerName + '</h1>' +
+    '<div class="sub">SLR Tennis Academy \u00B7 \u0645\u0631\u0628\u06CC: ' + r.coachName + ' \u00B7 ' + toJalali(r.date) + ' \u00B7 \u0633\u0627\u0639\u062A: ' + (r.sessionTime||'') + '</div>' +
+    '<div style="text-align:center;margin:12px 0;"><div style="font-size:52px;font-weight:bold;color:' + scoreColor + ';line-height:1;">' + r.totalScore + '</div><div style="font-size:11px;color:#888;">\u0646\u0645\u0631\u0647 \u06A9\u0644\u06CC \u0627\u0632 \u06F1\u06F0\u06F0</div></div>' +
+    '<div class="poi-meta">' +
+      '<div class="poi-meta-item"><div class="l">\u062D\u0636\u0648\u0631</div><div class="v">' + (r.attendance||'-') + '</div></div>' +
+      '<div class="poi-meta-item"><div class="l">\u062D\u0627\u0644 \u0628\u0627\u0632\u06CC\u06A9\u0646</div><div class="v">' + (r.mood||'-') + '</div></div>' +
+      '<div class="poi-meta-item"><div class="l">\u0627\u0631\u062A\u0642\u0627\u0621 \u0633\u0637\u062D</div><div class="v">' + (r.upgrade||'-') + '</div></div>' +
+    '</div>' +
+    focusHtml +
+    '<div class="poi-section">\u0645\u06CC\u0627\u0646\u06AF\u06CC\u0646 \u0633\u06AF\u0645\u0646\u062A\u200C\u0647\u0627</div>' +
+    '<table><tr><th>\u0633\u06AF\u0645\u0646\u062A</th><th>\u0645\u06CC\u0627\u0646\u06AF\u06CC\u0646 (\u0627\u0632 \u06F5)</th></tr>' + segHtml + '</table>' +
+    '<div class="poi-section">\u0627\u0631\u0632\u06CC\u0627\u0628\u06CC \u062A\u06A9\u0646\u06CC\u06A9\u06CC</div>' +
+    '<table><tr><th>\u0645\u0647\u0627\u0631\u062A</th><th>\u0633\u062A\u0627\u0631\u0647</th><th>\u0646\u0645\u0631\u0647</th></tr>' + skillsHtml + '</table>' +
+    progressHtml + challengeHtml + homeworkHtml + noteHtml +
+    '<div class="poi-foot">SLR Tennis Academy \u2014 ' + nowJalaliDateTime() + '</div>';
+
+  ov.appendChild(content);
+  document.body.appendChild(ov);
+  ov.scrollTop = 0;
 }
 
 function renderReportCharts(segLabels, segValues, totalScore){
@@ -1626,30 +2007,93 @@ function renderGuide(){
 }
 
 // ════════════════════════════════════════
+// BACKUP & RESTORE
+// ════════════════════════════════════════
+function renderBackup(){
+  const players = getPlayers();
+  const reports = getReports();
+  const coaches = getCoachesDyn();
+  const html = `
+  <div class="section-title" style="margin-bottom:1.5rem;">💾 پشتیبان‌گیری و بازیابی اطلاعات</div>
+
+  <div class="card">
+    <div class="card-title"><span class="ico">⚠️</span> هشدار مهم</div>
+    <div style="font-size:.85rem;color:var(--gray);line-height:1.8;">
+      تمام اطلاعات این سیستم (بازیکنان، گزارش‌ها، مربیان) فقط در حافظه همین مرورگر و همین دستگاه ذخیره می‌شود.
+      اگر کش/داده‌های مرورگر پاک شود یا از دستگاه دیگری وارد سیستم شوید، به این اطلاعات دسترسی نخواهید داشت.
+      <br><br>
+      <strong>پیشنهاد می‌شود حداقل هفته‌ای یک‌بار یک فایل پشتیبان بگیرید و در جای امنی (گوگل درایو، ایمیل و...) نگه دارید.</strong>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="ico">📤</span> گرفتن فایل پشتیبان</div>
+    <div style="font-size:.85rem;color:var(--gray);margin-bottom:1rem;">
+      وضعیت فعلی: ${players.length} بازیکن، ${reports.length} گزارش، ${coaches.length} مربی (ثبت‌شده توسط مدیر)
+    </div>
+    <button class="submit-btn" onclick="downloadBackup()">⬇️ دانلود فایل پشتیبان (JSON)</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="ico">📥</span> بازیابی از فایل پشتیبان</div>
+    <div style="font-size:.85rem;color:var(--gray);margin-bottom:1rem;">
+      با انتخاب فایل پشتیبان، اطلاعات فعلی این دستگاه با اطلاعات فایل <strong>جایگزین</strong> می‌شود. این کار قابل بازگشت نیست.
+    </div>
+    <input type="file" id="restoreFile" accept="application/json" style="margin-bottom:1rem;">
+    <button class="submit-btn" style="background:var(--green2);" onclick="restoreBackup()">⬆️ بازیابی اطلاعات از فایل</button>
+  </div>`;
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+function downloadBackup(){
+  const data = {
+    type: 'slr_academy_backup',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    players: getPlayers(),
+    reports: getReports(),
+    coachesDyn: getCoachesDyn(),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  a.href = url;
+  a.download = `slr-backup-${dateStr}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function restoreBackup(){
+  const input = document.getElementById('restoreFile');
+  const file = input.files[0];
+  if(!file){ alert('لطفاً یک فایل پشتیبان انتخاب کنید'); return; }
+  if(!confirm('آیا مطمئن هستید؟ اطلاعات فعلی این دستگاه با اطلاعات فایل جایگزین می‌شود و قابل بازگشت نیست.')) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      const data = JSON.parse(e.target.result);
+      if(data.type !== 'slr_academy_backup'){ alert('این فایل، فایل پشتیبان معتبر سیستم آکادمی نیست'); return; }
+      if(Array.isArray(data.players)) savePlayers(data.players);
+      if(Array.isArray(data.reports)) saveReports(data.reports);
+      if(Array.isArray(data.coachesDyn)){ saveCoachesDyn(data.coachesDyn); syncCoachUsers(); }
+      alert('بازیابی با موفقیت انجام شد ✅');
+      renderBackup();
+    } catch(err) {
+      alert('خطا در خوانیدن فایل پشتیبان: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════
 document.getElementById('loginScreen').style.display = 'flex';
 document.getElementById('app').style.display = 'none';
-
-// نمایش تاریخ شمسی امروز در صفحه لاگین
-document.addEventListener('DOMContentLoaded', function() {
-  const d = document.getElementById('todayDateDisplay');
-  if (d) d.textContent = todayShamsiReadable();
-});
-
-// live preview تاریخ شمسی
-document.addEventListener('input', function(e) {
-  if (e.target && e.target.id === 'r-date') {
-    const val = e.target.value;
-    const prev = document.getElementById('datePreview');
-    if (prev && val.match(/^\d{4}-\d{1,2}-\d{1,2}$/)) {
-      prev.textContent = '📅 ' + miladi2Shamsi(val);
-      prev.style.color = 'var(--clay)';
-    } else if (prev) {
-      prev.textContent = '';
-    }
-  }
-});
 </script>
 </body>
 </html>
