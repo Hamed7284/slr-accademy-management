@@ -357,20 +357,22 @@ async function kvSet(key, value) {
 }
 
 // Sync wrappers — load from KV on app start, write-through on save
-let _players = null, _reports = null, _coaches = null;
+let _players = null, _reports = null, _coaches = null, _announcements = null;
 
 async function loadAllData() {
   try {
     const timeout = ms => new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), ms));
-    const [p, r, c] = await Promise.all([
+    const [p, r, c, a] = await Promise.all([
       Promise.race([kvGet('slr_players'), timeout(5000)]).catch(()=>null),
       Promise.race([kvGet('slr_reports'), timeout(5000)]).catch(()=>null),
       Promise.race([kvGet('slr_coaches_dyn'), timeout(5000)]).catch(()=>null),
+      Promise.race([kvGet('slr_announcements'), timeout(5000)]).catch(()=>null),
     ]);
     let changed = false;
     if(p){ _players = p; localStorage.setItem('cache_slr_players', JSON.stringify(p)); changed=true; }
     if(r){ _reports = r; localStorage.setItem('cache_slr_reports', JSON.stringify(r)); changed=true; }
     if(c){ _coaches = c; localStorage.setItem('cache_slr_coaches_dyn', JSON.stringify(c)); syncCoachUsers(); changed=true; }
+    if(a){ _announcements = a; localStorage.setItem('cache_slr_announcements', JSON.stringify(a)); changed=true; }
     // refresh current tab if data changed
     if(changed && currentUser) initApp();
   } catch(e) {
@@ -400,6 +402,16 @@ const COACHES_DEFAULT = [
   {id:'c2', name:'سارا محمدی', specialty:'سرویس · زمین خاک', email:'sara@slr.ir', pass:'Sara2024'},
   {id:'c3', name:'کیان احمدی', specialty:'جوانان · فیزیک',   email:'kian@slr.ir', pass:'Kian2024'},
 ];
+const ANNOUNCEMENTS_DEFAULT = [];
+const COURTS = [
+  {id:'all',   name:'کل باشگاه (همه زمین‌ها)'},
+  {id:'open1', name:'زمین روباز ۱'},
+  {id:'open2', name:'زمین روباز ۲'},
+  {id:'open3', name:'زمین روباز ۳'},
+  {id:'open4', name:'زمین روباز ۴'},
+  {id:'hall',  name:'سالن سرپوشیده'},
+];
+const ANNOUNCEMENT_REASONS = ['تعطیلی رسمی','تعمیرات','شرایط آب و هوا','غیبت مربی','رویداد ویژه','سایر'];
 
 const PLAYERS_DEFAULT = [
   {id:'p1', name:'محمد کریمی',    age:16, level:'پیشرفته',  coachId:'c1', avatar:'#c4622d', phone:'09120000001', loginCode:'09120000001'},
@@ -653,6 +665,7 @@ function doLogin(){
       _players = JSON.parse(localStorage.getItem('cache_slr_players')||'null') || PLAYERS_DEFAULT;
       _reports = JSON.parse(localStorage.getItem('cache_slr_reports')||'null') || REPORTS_DEFAULT;
       _coaches = JSON.parse(localStorage.getItem('cache_slr_coaches_dyn')||'null') || COACHES_DEFAULT;
+      _announcements = JSON.parse(localStorage.getItem('cache_slr_announcements')||'null') || ANNOUNCEMENTS_DEFAULT;
       initApp();
       loadAllData();
     } else {
@@ -673,6 +686,7 @@ function doLogin(){
     _players = JSON.parse(localStorage.getItem('cache_slr_players')||'null') || PLAYERS_DEFAULT;
     _reports = JSON.parse(localStorage.getItem('cache_slr_reports')||'null') || REPORTS_DEFAULT;
     _coaches = JSON.parse(localStorage.getItem('cache_slr_coaches_dyn')||'null') || COACHES_DEFAULT;
+    _announcements = JSON.parse(localStorage.getItem('cache_slr_announcements')||'null') || ANNOUNCEMENTS_DEFAULT;
     initApp();
     loadAllData();
   } else {
@@ -709,6 +723,7 @@ function buildNav(){
   const tabs = currentUser.role === 'admin'
     ? [
         {id:'dashboard',    label:'📊 داشبورد'},
+        {id:'announcements', label:'📢 اعلانات'},
         {id:'all-reports',  label:'📋 همه گزارش‌ها'},
         {id:'players',      label:'👥 بازیکنان'},
         {id:'by-coach',     label:'📊 گزارش مربیان'},
@@ -717,9 +732,11 @@ function buildNav(){
       ]
     : currentUser.role === 'player'
     ? [
+        {id:'announcements', label:'📢 اعلانات'},
         {id:'my-progress',  label:'📈 روند پیشرفت من'},
       ]
     : [
+        {id:'announcements', label:'📢 اعلانات'},
         {id:'new-report',   label:'✏️ ثبت گزارش'},
         {id:'my-reports',   label:'📋 گزارش‌های من'},
         {id:'my-players',   label:'👥 بازیکنانم'},
@@ -738,6 +755,7 @@ function showTab(id){
   mc.innerHTML = '';
   const renders = {
     'dashboard':      renderDashboard,
+    'announcements':  renderAnnouncements,
     'all-reports':    renderAllReports,
     'players':        renderPlayers,
     'by-coach':       renderByCoach,
@@ -1902,6 +1920,21 @@ function saveCoachesDyn(c){
   kvSet('slr_coaches_dyn', c);
 }
 
+// ════════════════════════════════════════
+// ANNOUNCEMENTS DATA LAYER
+// ════════════════════════════════════════
+function getAnnouncements(){
+  if(_announcements !== null) return _announcements;
+  const s = localStorage.getItem('cache_slr_announcements');
+  _announcements = s ? JSON.parse(s) : ANNOUNCEMENTS_DEFAULT;
+  return _announcements;
+}
+function saveAnnouncements(a){
+  _announcements = a;
+  localStorage.setItem('cache_slr_announcements', JSON.stringify(a));
+  kvSet('slr_announcements', a);
+}
+
 // Sync dynamic coaches into USERS at runtime
 function syncCoachUsers(){
   const coaches = getCoachesDyn();
@@ -2155,6 +2188,7 @@ function downloadBackup(){
     players: getPlayers(),
     reports: getReports(),
     coachesDyn: getCoachesDyn(),
+    announcements: getAnnouncements(),
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
@@ -2182,6 +2216,7 @@ function restoreBackup(){
       if(Array.isArray(data.players)) savePlayers(data.players);
       if(Array.isArray(data.reports)) saveReports(data.reports);
       if(Array.isArray(data.coachesDyn)){ saveCoachesDyn(data.coachesDyn); syncCoachUsers(); }
+      if(Array.isArray(data.announcements)) saveAnnouncements(data.announcements);
       alert('بازیابی با موفقیت انجام شد ✅');
       renderBackup();
     } catch(err) {
@@ -2190,6 +2225,193 @@ function restoreBackup(){
   };
   reader.readAsText(file);
 }
+
+
+// ════════════════════════════════════════
+// ANNOUNCEMENTS
+// ════════════════════════════════════════
+function renderAnnouncements(){
+  const isAdmin = currentUser.role === 'admin';
+  const all = getAnnouncements().slice().sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const active = all.filter(a => !a.endDate || a.endDate >= todayStr);
+  const past = all.filter(a => a.endDate && a.endDate < todayStr);
+
+  const reasonBadge = r => {
+    const colors = {'تعطیلی رسمی':'badge-clay','تعمیرات':'badge-gray','شرایط آب و هوا':'badge-gray','غیبت مربی':'badge-clay','رویداد ویژه':'badge-green','سایر':'badge-gray'};
+    return `<span class="badge ${colors[r]||'badge-gray'}">${r}</span>`;
+  };
+
+  const courtName = id => (COURTS.find(c=>c.id===id)||{}).name || id;
+
+  const cardHtml = a => `
+    <div class="card" style="border-right:4px solid ${a.endDate && a.endDate < todayStr ? '#bbb' : 'var(--clay)'};">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.6rem;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;">
+          <div style="font-weight:800;font-size:1rem;margin-bottom:.3rem;">${a.title}</div>
+          <div style="font-size:.78rem;color:var(--gray);margin-bottom:.5rem;">
+            ${reasonBadge(a.reason)} &nbsp; 🏟️ ${courtName(a.courtId)}
+          </div>
+          <div style="font-size:.85rem;color:var(--dark);line-height:1.8;margin-bottom:.5rem;">${a.message}</div>
+          <div style="font-size:.78rem;color:var(--gray);">
+            📅 از ${toJalali(a.startDate)}${a.startTime?(' ساعت '+a.startTime):''}
+            ${a.endDate ? ' تا ' + toJalali(a.endDate) + (a.endTime?(' ساعت '+a.endTime):'') : ''}
+          </div>
+        </div>
+        ${isAdmin ? `
+        <div style="display:flex;gap:.4rem;flex-shrink:0;">
+          <button onclick="shareAnnouncementWhatsapp('${a.id}')" style="background:#25D366;color:#fff;border:none;border-radius:6px;padding:.4rem .7rem;font-size:.75rem;cursor:pointer;">📱 واتساپ</button>
+          <button onclick="editAnnouncement('${a.id}')" style="background:var(--lightgray);color:var(--dark);border:none;border-radius:6px;padding:.4rem .6rem;font-size:.75rem;cursor:pointer;">✏️</button>
+          <button onclick="deleteAnnouncement('${a.id}')" style="background:#fdeaea;color:#c0392b;border:none;border-radius:6px;padding:.4rem .6rem;font-size:.75rem;cursor:pointer;">🗑️</button>
+        </div>` : ''}
+      </div>
+    </div>`;
+
+  const html = `
+  <div class="section-header">
+    <div class="section-title">📢 اعلانات</div>
+    ${isAdmin ? `<button class="submit-btn" style="font-size:.8rem;padding:.6rem 1.2rem;" onclick="showAnnouncementForm()">+ اعلان جدید</button>` : ''}
+  </div>
+
+  ${active.length===0 ? `<div class="empty-state"><span class="ico">📭</span><p>در حال حاضر اعلان فعالی وجود ندارد</p></div>` :
+    active.map(cardHtml).join('')}
+
+  ${past.length>0 ? `
+  <div class="sec-divider" style="margin-top:1.5rem;">اعلانات گذشته</div>
+  ${past.map(cardHtml).join('')}
+  ` : ''}
+  `;
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+function showAnnouncementForm(id){
+  const editing = id ? getAnnouncements().find(a=>a.id===id) : null;
+  const now = new Date();
+  const [jy,jm,jd] = gregorianToJalali(now);
+  const startG = editing ? editing.startDate : `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const [sjy,sjm,sjd] = editing ? gregorianToJalali(new Date(startG+'T00:00:00')) : [jy,jm,jd];
+  const endG = editing && editing.endDate ? editing.endDate : startG;
+  const [ejy,ejm,ejd] = gregorianToJalali(new Date(endG+'T00:00:00'));
+
+  document.getElementById('reportModalContent').innerHTML = `
+    <div class="modal-header">
+      <div class="modal-title">${editing ? '✏️ ویرایش اعلان' : '📢 اعلان جدید'}</div>
+      <button class="modal-close" onclick="document.getElementById('reportModal').classList.remove('on')">✕</button>
+    </div>
+    <div class="form-group"><label>عنوان اعلان *</label><input type="text" id="ann-title" value="${editing?editing.title.replace(/"/g,'&quot;'):''}" placeholder="مثلاً: تعطیلی زمین روباز ۲"></div>
+
+    <div class="form-grid">
+      <div class="form-group"><label>دلیل</label>
+        <select id="ann-reason">
+          ${ANNOUNCEMENT_REASONS.map(r=>`<option value="${r}" ${editing&&editing.reason===r?'selected':''}>${r}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label>محدوده تأثیر</label>
+        <select id="ann-court">
+          ${COURTS.map(c=>`<option value="${c.id}" ${editing&&editing.courtId===c.id?'selected':''}>${c.name}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group"><label>پیام اعلان *</label><textarea id="ann-message" rows="3" placeholder="توضیح کامل برای بازیکنان، مربیان و والدین...">${editing?editing.message:''}</textarea></div>
+
+    <div class="sec-divider" style="margin-top:1rem;">بازه زمانی (شمسی)</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>تاریخ شروع</label>
+        <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:.4rem;">
+          <select id="ann-start-day" onchange="updateAnnDate('start')">${buildDayOptions(sjy,sjm,sjd)}</select>
+          <select id="ann-start-month" onchange="updateAnnDate('start')">${JALALI_MONTHS.map((m,i)=>`<option value="${i+1}" ${i+1===sjm?'selected':''}>${m}</option>`).join('')}</select>
+          <select id="ann-start-year" onchange="updateAnnDate('start')">${buildYearOptions(sjy)}</select>
+        </div>
+        <input type="hidden" id="ann-start-date" value="${startG}">
+      </div>
+      <div class="form-group"><label>ساعت شروع</label><input type="time" id="ann-start-time" value="${editing?editing.startTime||'':''}"></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>تاریخ پایان</label>
+        <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:.4rem;">
+          <select id="ann-end-day" onchange="updateAnnDate('end')">${buildDayOptions(ejy,ejm,ejd)}</select>
+          <select id="ann-end-month" onchange="updateAnnDate('end')">${JALALI_MONTHS.map((m,i)=>`<option value="${i+1}" ${i+1===ejm?'selected':''}>${m}</option>`).join('')}</select>
+          <select id="ann-end-year" onchange="updateAnnDate('end')">${buildYearOptions(ejy)}</select>
+        </div>
+        <input type="hidden" id="ann-end-date" value="${endG}">
+      </div>
+      <div class="form-group"><label>ساعت پایان</label><input type="time" id="ann-end-time" value="${editing?editing.endTime||'':''}"></div>
+    </div>
+
+    <button class="submit-btn" style="width:100%;margin-top:.5rem;" onclick="saveAnnouncementForm(${editing?`'${editing.id}'`:'null'})">${editing?'ذخیره تغییرات':'انتشار اعلان'}</button>
+  `;
+  document.getElementById('reportModal').classList.add('on');
+}
+
+function updateAnnDate(which){
+  const jy = parseInt(document.getElementById(`ann-${which}-year`).value);
+  const jm = parseInt(document.getElementById(`ann-${which}-month`).value);
+  const dayEl = document.getElementById(`ann-${which}-day`);
+  const curDay = parseInt(dayEl.value);
+  dayEl.innerHTML = buildDayOptions(jy, jm, Math.min(curDay, jalaliMonthDays(jy,jm)));
+  const jd = parseInt(dayEl.value);
+  document.getElementById(`ann-${which}-date`).value = jalaliToGregorianStr(jy, jm, jd);
+}
+
+function editAnnouncement(id){
+  showAnnouncementForm(id);
+}
+
+function saveAnnouncementForm(id){
+  const title = document.getElementById('ann-title').value.trim();
+  const message = document.getElementById('ann-message').value.trim();
+  if(!title || !message){ alert('عنوان و پیام اعلان الزامی است'); return; }
+
+  const reason = document.getElementById('ann-reason').value;
+  const courtId = document.getElementById('ann-court').value;
+  const startDate = document.getElementById('ann-start-date').value;
+  const startTime = document.getElementById('ann-start-time').value;
+  const endDate = document.getElementById('ann-end-date').value;
+  const endTime = document.getElementById('ann-end-time').value;
+
+  const list = getAnnouncements();
+  if(id){
+    const idx = list.findIndex(a=>a.id===id);
+    if(idx>-1) list[idx] = {...list[idx], title, message, reason, courtId, startDate, startTime, endDate, endTime};
+  } else {
+    list.push({
+      id: 'ann'+Date.now(),
+      title, message, reason, courtId, startDate, startTime, endDate, endTime,
+      createdAt: Date.now(),
+      createdBy: currentUser.name,
+    });
+  }
+  saveAnnouncements(list);
+  document.getElementById('reportModal').classList.remove('on');
+  renderAnnouncements();
+}
+
+function deleteAnnouncement(id){
+  if(!confirm('آیا از حذف این اعلان مطمئن هستید؟')) return;
+  const list = getAnnouncements().filter(a=>a.id!==id);
+  saveAnnouncements(list);
+  renderAnnouncements();
+}
+
+function shareAnnouncementWhatsapp(id){
+  const a = getAnnouncements().find(x=>x.id===id);
+  if(!a) return;
+  const courtName = (COURTS.find(c=>c.id===a.courtId)||{}).name || a.courtId;
+  let text = `📢 اعلان SLR Tennis Academy\n\n`;
+  text += `${a.title}\n\n`;
+  text += `دلیل: ${a.reason}\n`;
+  text += `محدوده: ${courtName}\n`;
+  text += `از: ${toJalali(a.startDate)}${a.startTime?(' ساعت '+a.startTime):''}\n`;
+  if(a.endDate) text += `تا: ${toJalali(a.endDate)}${a.endTime?(' ساعت '+a.endTime):''}\n`;
+  text += `\n${a.message}`;
+  const url = 'https://wa.me/?text=' + encodeURIComponent(text);
+  window.open(url, '_blank');
+}
+
 
 // ════════════════════════════════════════
 // INIT
